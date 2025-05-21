@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use backend::{app, services::project::ProjectService};
+use backend::{
+    app,
+    services::{container::service::ContainerService, project::service::ProjectService},
+};
 use tracing::info;
 
 #[tokio::main]
@@ -13,7 +16,13 @@ async fn main() {
 
     info!("listening on {}", listener.local_addr().unwrap());
 
-    axum::serve(listener, app(Arc::new(ProjectService::default())))
-        .await
-        .unwrap();
+    axum::serve(
+        listener,
+        app(
+            Arc::new(ProjectService::default()),
+            Arc::new(ContainerService::default()),
+        ),
+    )
+    .await
+    .unwrap();
 }
