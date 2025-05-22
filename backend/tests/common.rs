@@ -1,53 +1,98 @@
-use std::sync::Arc;
+use std::{clone, path::PathBuf, sync::Arc};
 
 use axum_test::TestServer;
 use backend::{
     app,
-    services::{container::ContainerServiceTrait, project::ProjectServiceTrait},
+    services::{
+        container::ContainerServiceTrait,
+        project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
+    },
 };
-use itertools::rev;
 
-pub struct MockProjectService;
+struct Project {
+    name: String,
+    dir: PathBuf,
+    compose: String,
+    env: Option<String>,
+}
+
+pub struct MockProjectService {
+    data: Vec<Project>,
+}
+
+impl Default for MockProjectService {
+    fn default() -> Self {
+        MockProjectService {
+            data: vec![
+                Project {
+                    name: "test".to_string(),
+                    dir: "/path/to/project1".into(),
+                    compose: "compose.yml".to_string(),
+                    env: None,
+                },
+                Project {
+                    name: "test2".to_string(),
+                    dir: "/path/to/project2".into(),
+                    compose: "compose.yml".to_string(),
+                    env: Some(".env".to_string()),
+                },
+                Project {
+                    name: "test3".to_string(),
+                    dir: "/path/to/project2".into(),
+                    compose: "compose.yml".to_string(),
+                    env: Some(".env".to_string()),
+                },
+            ],
+        }
+    }
+}
 
 impl ProjectServiceTrait for MockProjectService {
     fn all_projects(
         &self,
     ) -> backend::services::project::Result<Vec<backend::services::project::ProjectInfo>> {
-        Ok(vec![
-            backend::services::project::ProjectInfo {
-                name: "test".to_string(),
-                dir: "/path/to/project1".into(),
-            },
-            backend::services::project::ProjectInfo {
-                name: "test2".to_string(),
-                dir: "/path/to/project2".into(),
-            },
-            backend::services::project::ProjectInfo {
-                name: "test3".to_string(),
-                dir: "/path/to/project2".into(),
-            },
-        ])
+        Ok(self
+            .data
+            .iter()
+            .map(|data| ProjectInfo {
+                name: data.name.clone(),
+                dir: data.dir.clone(),
+            })
+            .collect())
     }
 
     fn project(
         &self,
         name: String,
     ) -> backend::services::project::Result<backend::services::project::ProjectInfo> {
-        todo!()
+        self.all_projects()?
+            .into_iter()
+            .find(|project| project.name == name)
+            .ok_or_else(|| ProjectServiceError::NotFound(name.to_string()))
     }
 
     fn compose(
         &self,
         project: &backend::services::project::ProjectInfo,
     ) -> backend::services::project::Result<String> {
-        todo!()
+        let project = self
+            .data
+            .iter()
+            .find(|data| data.name == project.name)
+            .unwrap();
+        Ok(project.compose.clone())
     }
 
     fn env(
         &self,
         project: &backend::services::project::ProjectInfo,
-    ) -> backend::services::project::Result<String> {
-        todo!()
+    ) -> backend::services::project::Result<Option<String>> {
+        let project = self
+            .data
+            .iter()
+            .find(|data| data.name == project.name)
+            .unwrap();
+        Ok(project.env.clone())
     }
 }
 
@@ -82,7 +127,7 @@ impl ContainerServiceTrait for MockContainerService {
 }
 
 pub fn test_server() -> TestServer {
-    let project_service = Arc::new(MockProjectService);
+    let project_service = Arc::new(MockProjectService::default());
     let container_service = Arc::new(MockContainerService);
     let app = app(project_service.clone(), container_service.clone());
 

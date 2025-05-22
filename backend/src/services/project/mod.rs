@@ -37,5 +37,5 @@ pub trait ProjectServiceTrait: Send + Sync {
     fn all_projects(&self) -> Result<Vec<ProjectInfo>>;
     fn project(&self, name: String) -> Result<ProjectInfo>;
     fn compose(&self, project: &ProjectInfo) -> Result<String>;
-    fn env(&self, project: &ProjectInfo) -> Result<String>;
+    fn env(&self, project: &ProjectInfo) -> Result<Option<String>>;
 }

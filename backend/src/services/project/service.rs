@@ -16,7 +16,7 @@ impl ProjectServiceTrait for ProjectService {
         todo!()
     }
 
-    fn env(&self, project: &ProjectInfo) -> super::Result<String> {
+    fn env(&self, project: &ProjectInfo) -> super::Result<Option<String>> {
         todo!()
     }
 }

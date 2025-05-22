@@ -96,12 +96,30 @@ async fn get_all_projects(
 
 async fn get_project_details(
     State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
     Path(project_name): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let project_info = project_service.project(project_name)?;
+    let is_online = container_service.is_online(&project_info)?;
+    let status = if is_online { "running" } else { "stopped" };
 
-    Ok(Json(json!({
-        "name": project_info.name
-    }))
-    .into_response())
+    let compose = project_service.compose(&project_info)?;
+    let env = project_service.env(&project_info)?;
+
+    let json = if let Some(env) = env {
+        json!({
+            "name": project_info.name,
+            "status": status,
+            "compose": compose,
+            "env": env
+        })
+    } else {
+        json!({
+            "name": project_info.name,
+            "status": status,
+            "compose": compose,
+        })
+    };
+
+    Ok(Json(json).into_response())
 }
