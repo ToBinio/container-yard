@@ -11,4 +11,12 @@ impl ContainerServiceTrait for ContainerService {
     fn is_online(&self, project: &ProjectInfo) -> super::Result<bool> {
         todo!()
     }
+
+    fn stop(&self, project: &ProjectInfo) -> super::Result<bool> {
+        todo!()
+    }
+
+    fn start(&self, project: &ProjectInfo) -> super::Result<bool> {
+        todo!()
+    }
 }

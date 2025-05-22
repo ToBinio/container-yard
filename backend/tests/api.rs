@@ -58,7 +58,7 @@ async fn get_project_details_no_env() {
 async fn get_project_details_unknown() {
     let server = common::test_server();
 
-    let response = server.get("/projects/test404").await;
+    let response = server.get("/projectss/test404").await;
 
     response.assert_status_not_found();
 }
@@ -67,7 +67,7 @@ async fn get_project_details_unknown() {
 async fn stop_project() {
     let server = common::test_server();
 
-    let response = server.post("/project/stop/test").await;
+    let response = server.post("/projects/stop/test").await;
 
     response.assert_json(&json!({
         "name": "test",
@@ -81,7 +81,7 @@ async fn stop_project() {
 async fn stop_project_already_stopped() {
     let server = common::test_server();
 
-    let response = server.post("/project/stop/test2").await;
+    let response = server.post("/projects/stop/test2").await;
 
     response.assert_status_bad_request();
 }
@@ -90,7 +90,7 @@ async fn stop_project_already_stopped() {
 async fn stop_project_unkown() {
     let server = common::test_server();
 
-    let response = server.post("/project/start/test404").await;
+    let response = server.post("/projects/start/test404").await;
 
     response.assert_status_not_found();
 }
@@ -99,11 +99,11 @@ async fn stop_project_unkown() {
 async fn start_project() {
     let server = common::test_server();
 
-    let response = server.post("/project/start/test2").await;
+    let response = server.post("/projects/start/test2").await;
 
     response.assert_json(&json!({
         "name": "test2",
-        "status": "started",
+        "status": "running",
         "compose": "compose.yml",
         "env": ".env"
     }));
@@ -114,7 +114,7 @@ async fn start_project() {
 async fn start_project_already_started() {
     let server = common::test_server();
 
-    let response = server.post("/project/start/test").await;
+    let response = server.post("/projects/start/test").await;
 
     response.assert_status_bad_request();
 }
@@ -123,7 +123,7 @@ async fn start_project_already_started() {
 async fn start_project_unkown() {
     let server = common::test_server();
 
-    let response = server.post("/project/start/test404").await;
+    let response = server.post("/projects/start/test404").await;
 
     response.assert_status_not_found();
 }
@@ -132,7 +132,7 @@ async fn start_project_unkown() {
 async fn update_project() {
     let server = common::test_server();
 
-    let response = server.post("/project/update/test").await;
+    let response = server.post("/projects/update/test").await;
 
     response.assert_json(&json!({
         "name": "test",
@@ -146,7 +146,7 @@ async fn update_project() {
 async fn update_project_already_stopped() {
     let server = common::test_server();
 
-    let response = server.post("/project/update/test2").await;
+    let response = server.post("/projects/update/test2").await;
 
     response.assert_status_bad_request();
 }
@@ -155,7 +155,7 @@ async fn update_project_already_stopped() {
 async fn update_project_unkown() {
     let server = common::test_server();
 
-    let response = server.post("/project/update/test404").await;
+    let response = server.post("/projects/update/test404").await;
 
     response.assert_status_not_found();
 }
@@ -165,7 +165,7 @@ async fn update_compose_project() {
     let server = common::test_server();
 
     let response = server
-        .post("/project/compose/update/test")
+        .post("/projects/compose/update/test")
         .json(&json!({
             "compose": "newCompose",
         }))
@@ -183,7 +183,7 @@ async fn update_compose_project() {
 async fn update_compose_project_no_compose() {
     let server = common::test_server();
 
-    let response = server.post("/project/compose/update/test2").await;
+    let response = server.post("/projects/compose/update/test2").await;
 
     response.assert_status_bad_request();
 }
@@ -192,7 +192,7 @@ async fn update_compose_project_no_compose() {
 async fn update_compose_project_unkown() {
     let server = common::test_server();
 
-    let response = server.post("/project/compose/update/test404").await;
+    let response = server.post("/projects/compose/update/test404").await;
 
     response.assert_status_not_found();
 }
@@ -202,7 +202,7 @@ async fn update_env_project() {
     let server = common::test_server();
 
     let response = server
-        .post("/project/env/update/test2")
+        .post("/projects/env/update/test2")
         .json(&json!({
             "env": "newEnv",
         }))
@@ -222,7 +222,7 @@ async fn update_env_project_no_env_yet() {
     let server = common::test_server();
 
     let response = server
-        .post("/project/env/update/test")
+        .post("/projects/env/update/test")
         .json(&json!({
             "env": "newEnv",
         }))
@@ -241,7 +241,7 @@ async fn update_env_project_no_env_yet() {
 async fn update_env_project_no_env() {
     let server = common::test_server();
 
-    let response = server.post("/project/env/update/test2").await;
+    let response = server.post("/projects/env/update/test2").await;
 
     response.assert_status_bad_request();
 }
@@ -250,7 +250,7 @@ async fn update_env_project_no_env() {
 async fn update_env_project_unkown() {
     let server = common::test_server();
 
-    let response = server.post("/project/env/update/test404").await;
+    let response = server.post("/projects/env/update/test404").await;
 
     response.assert_status_not_found();
 }

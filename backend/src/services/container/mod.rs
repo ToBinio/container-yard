@@ -13,12 +13,20 @@ pub type Error = ContainerServiceError;
 pub enum ContainerServiceError {
     #[error("Could not find Project {0}")]
     NotFound(String),
+
+    #[error("Project already Stopped {0}")]
+    AlreadyStopped(String),
+
+    #[error("Project already Running {0}")]
+    AlreadyRunning(String),
 }
 
 impl IntoResponse for ContainerServiceError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
             ContainerServiceError::NotFound(_) => (StatusCode::NOT_FOUND, self.to_string()),
+            ContainerServiceError::AlreadyStopped(_) => (StatusCode::BAD_REQUEST, self.to_string()),
+            ContainerServiceError::AlreadyRunning(_) => (StatusCode::BAD_REQUEST, self.to_string()),
         };
 
         let body = Json(json!({ "error": message }));
@@ -29,4 +37,6 @@ impl IntoResponse for ContainerServiceError {
 pub trait ContainerServiceTrait: Send + Sync {
     fn are_online(&self, projects: &Vec<ProjectInfo>) -> Result<Vec<bool>>;
     fn is_online(&self, project: &ProjectInfo) -> Result<bool>;
+    fn stop(&self, project: &ProjectInfo) -> Result<bool>;
+    fn start(&self, project: &ProjectInfo) -> Result<bool>;
 }

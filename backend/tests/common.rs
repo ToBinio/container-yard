@@ -1,10 +1,15 @@
-use std::{clone, path::PathBuf, sync::Arc};
+use std::{
+    clone,
+    collections::HashMap,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use axum_test::TestServer;
 use backend::{
     app,
     services::{
-        container::ContainerServiceTrait,
+        container::{ContainerServiceError, ContainerServiceTrait},
         project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
     },
 };
@@ -96,7 +101,23 @@ impl ProjectServiceTrait for MockProjectService {
     }
 }
 
-pub struct MockContainerService;
+pub struct MockContainerService {
+    data: Arc<Mutex<HashMap<String, bool>>>,
+}
+
+impl Default for MockContainerService {
+    fn default() -> Self {
+        let mut map = HashMap::new();
+
+        map.insert("test".to_string(), true);
+        map.insert("test2".to_string(), false);
+        map.insert("test3".to_string(), true);
+
+        MockContainerService {
+            data: Arc::new(Mutex::new(map)),
+        }
+    }
+}
 
 impl ContainerServiceTrait for MockContainerService {
     fn are_online(
@@ -115,20 +136,39 @@ impl ContainerServiceTrait for MockContainerService {
         &self,
         project: &backend::services::project::ProjectInfo,
     ) -> backend::services::container::Result<bool> {
-        let result = match project.name.as_str() {
-            "test" => true,
-            "test2" => false,
-            "test3" => true,
-            _ => false,
-        };
+        Ok(*self.data.lock().unwrap().get(&project.name).unwrap())
+    }
 
-        Ok(result)
+    fn stop(&self, project: &ProjectInfo) -> backend::services::container::Result<bool> {
+        let mut data = self.data.lock().unwrap();
+        let state = data.get_mut(&project.name).unwrap();
+
+        if *state {
+            *state = false;
+        } else {
+            return Err(ContainerServiceError::AlreadyStopped(project.name.clone()));
+        }
+
+        return Ok(true);
+    }
+
+    fn start(&self, project: &ProjectInfo) -> backend::services::container::Result<bool> {
+        let mut data = self.data.lock().unwrap();
+        let state = data.get_mut(&project.name).unwrap();
+
+        if !*state {
+            *state = true;
+        } else {
+            return Err(ContainerServiceError::AlreadyRunning(project.name.clone()));
+        }
+
+        return Ok(true);
     }
 }
 
 pub fn test_server() -> TestServer {
     let project_service = Arc::new(MockProjectService::default());
-    let container_service = Arc::new(MockContainerService);
+    let container_service = Arc::new(MockContainerService::default());
     let app = app(project_service.clone(), container_service.clone());
 
     TestServer::builder().http_transport().build(app).unwrap()

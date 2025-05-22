@@ -4,12 +4,12 @@ use axum::{
     Json, Router,
     extract::{FromRef, Path, State},
     response::{IntoResponse, Response},
-    routing::get,
+    routing::{get, post},
 };
 use serde_json::{Value, json};
 use services::{
     container::{ContainerServiceError, ContainerServiceTrait},
-    project::{ProjectServiceError, ProjectServiceTrait},
+    project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
 };
 use thiserror::Error;
 use tower_http::trace::{self, TraceLayer};
@@ -60,6 +60,8 @@ pub fn app(
     Router::new()
         .route("/projects", get(get_all_projects))
         .route("/projects/{project_name}", get(get_project_details))
+        .route("/projects/stop/{project_name}", post(post_stop_project))
+        .route("/projects/start/{project_name}", post(post_start_project))
         .with_state(AppState {
             project_service: project_service,
             container_service: container_service,
@@ -94,12 +96,11 @@ async fn get_all_projects(
     Ok(Json(json!(objects)))
 }
 
-async fn get_project_details(
-    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
-    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
-    Path(project_name): Path<String>,
-) -> Result<impl IntoResponse, AppError> {
-    let project_info = project_service.project(project_name)?;
+fn project_details(
+    project_info: &ProjectInfo,
+    project_service: Arc<dyn ProjectServiceTrait>,
+    container_service: Arc<dyn ContainerServiceTrait>,
+) -> Result<serde_json::Value, AppError> {
     let is_online = container_service.is_online(&project_info)?;
     let status = if is_online { "running" } else { "stopped" };
 
@@ -121,5 +122,42 @@ async fn get_project_details(
         })
     };
 
+    return Ok(json);
+}
+
+async fn get_project_details(
+    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
+    Path(project_name): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let project_info = project_service.project(project_name)?;
+
+    let json = project_details(&project_info, project_service, container_service)?;
+    Ok(Json(json).into_response())
+}
+
+async fn post_stop_project(
+    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
+    Path(project_name): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let project_info = project_service.project(project_name)?;
+
+    container_service.stop(&project_info)?;
+
+    let json = project_details(&project_info, project_service, container_service)?;
+    Ok(Json(json).into_response())
+}
+
+async fn post_start_project(
+    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
+    Path(project_name): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let project_info = project_service.project(project_name)?;
+
+    container_service.start(&project_info)?;
+
+    let json = project_details(&project_info, project_service, container_service)?;
     Ok(Json(json).into_response())
 }
