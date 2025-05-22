@@ -2,10 +2,11 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::{FromRef, Path, State},
+    extract::{self, FromRef, Path, State},
     response::{IntoResponse, Response},
     routing::{get, post},
 };
+use serde::Deserialize;
 use serde_json::{Value, json};
 use services::{
     container::{ContainerServiceError, ContainerServiceTrait},
@@ -62,6 +63,15 @@ pub fn app(
         .route("/projects/{project_name}", get(get_project_details))
         .route("/projects/stop/{project_name}", post(post_stop_project))
         .route("/projects/start/{project_name}", post(post_start_project))
+        .route("/projects/update/{project_name}", post(post_update_project))
+        .route(
+            "/projects/compose/update/{project_name}",
+            post(post_update_compose_project),
+        )
+        .route(
+            "/projects/env/update/{project_name}",
+            post(post_update_env_project),
+        )
         .with_state(AppState {
             project_service: project_service,
             container_service: container_service,
@@ -157,6 +167,57 @@ async fn post_start_project(
     let project_info = project_service.project(project_name)?;
 
     container_service.start(&project_info)?;
+
+    let json = project_details(&project_info, project_service, container_service)?;
+    Ok(Json(json).into_response())
+}
+
+async fn post_update_project(
+    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
+    Path(project_name): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let project_info = project_service.project(project_name)?;
+
+    container_service.update(&project_info)?;
+
+    let json = project_details(&project_info, project_service, container_service)?;
+    Ok(Json(json).into_response())
+}
+
+#[derive(Deserialize)]
+struct UpdateCompose {
+    compose: String,
+}
+
+async fn post_update_compose_project(
+    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
+    Path(project_name): Path<String>,
+    extract::Json(update): extract::Json<UpdateCompose>,
+) -> Result<impl IntoResponse, AppError> {
+    let project_info = project_service.project(project_name)?;
+
+    project_service.update_compose(&project_info, update.compose)?;
+
+    let json = project_details(&project_info, project_service, container_service)?;
+    Ok(Json(json).into_response())
+}
+
+#[derive(Deserialize)]
+struct UpdateEnv {
+    env: String,
+}
+
+async fn post_update_env_project(
+    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
+    Path(project_name): Path<String>,
+    extract::Json(update): extract::Json<UpdateEnv>,
+) -> Result<impl IntoResponse, AppError> {
+    let project_info = project_service.project(project_name)?;
+
+    project_service.update_env(&project_info, update.env)?;
 
     let json = project_details(&project_info, project_service, container_service)?;
     Ok(Json(json).into_response())

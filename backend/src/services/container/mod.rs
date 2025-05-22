@@ -37,6 +37,7 @@ impl IntoResponse for ContainerServiceError {
 pub trait ContainerServiceTrait: Send + Sync {
     fn are_online(&self, projects: &Vec<ProjectInfo>) -> Result<Vec<bool>>;
     fn is_online(&self, project: &ProjectInfo) -> Result<bool>;
-    fn stop(&self, project: &ProjectInfo) -> Result<bool>;
-    fn start(&self, project: &ProjectInfo) -> Result<bool>;
+    fn stop(&self, project: &ProjectInfo) -> Result<()>;
+    fn start(&self, project: &ProjectInfo) -> Result<()>;
+    fn update(&self, project: &ProjectInfo) -> Result<()>;
 }

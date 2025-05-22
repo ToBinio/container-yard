@@ -183,16 +183,24 @@ async fn update_compose_project() {
 async fn update_compose_project_no_compose() {
     let server = common::test_server();
 
-    let response = server.post("/projects/compose/update/test2").await;
+    let response = server
+        .post("/projects/compose/update/test2")
+        .json(&json!({}))
+        .await;
 
-    response.assert_status_bad_request();
+    response.assert_status_unprocessable_entity();
 }
 
 #[tokio::test]
 async fn update_compose_project_unkown() {
     let server = common::test_server();
 
-    let response = server.post("/projects/compose/update/test404").await;
+    let response = server
+        .post("/projects/compose/update/test404")
+        .json(&json!({
+            "compose": "newCompose",
+        }))
+        .await;
 
     response.assert_status_not_found();
 }
@@ -241,16 +249,24 @@ async fn update_env_project_no_env_yet() {
 async fn update_env_project_no_env() {
     let server = common::test_server();
 
-    let response = server.post("/projects/env/update/test2").await;
+    let response = server
+        .post("/projects/env/update/test2")
+        .json(&json!({}))
+        .await;
 
-    response.assert_status_bad_request();
+    response.assert_status_unprocessable_entity();
 }
 
 #[tokio::test]
 async fn update_env_project_unkown() {
     let server = common::test_server();
 
-    let response = server.post("/projects/env/update/test404").await;
+    let response = server
+        .post("/projects/env/update/test404")
+        .json(&json!({
+            "env": "newEnv",
+        }))
+        .await;
 
     response.assert_status_not_found();
 }

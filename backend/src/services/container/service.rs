@@ -12,11 +12,15 @@ impl ContainerServiceTrait for ContainerService {
         todo!()
     }
 
-    fn stop(&self, project: &ProjectInfo) -> super::Result<bool> {
+    fn stop(&self, project: &ProjectInfo) -> super::Result<()> {
         todo!()
     }
 
-    fn start(&self, project: &ProjectInfo) -> super::Result<bool> {
+    fn start(&self, project: &ProjectInfo) -> super::Result<()> {
+        todo!()
+    }
+
+    fn update(&self, project: &ProjectInfo) -> super::Result<()> {
         todo!()
     }
 }

@@ -1,5 +1,4 @@
 use std::{
-    clone,
     collections::HashMap,
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -22,32 +21,34 @@ struct Project {
 }
 
 pub struct MockProjectService {
-    data: Vec<Project>,
+    data: Arc<Mutex<Vec<Project>>>,
 }
 
 impl Default for MockProjectService {
     fn default() -> Self {
+        let data = vec![
+            Project {
+                name: "test".to_string(),
+                dir: "/path/to/project1".into(),
+                compose: "compose.yml".to_string(),
+                env: None,
+            },
+            Project {
+                name: "test2".to_string(),
+                dir: "/path/to/project2".into(),
+                compose: "compose.yml".to_string(),
+                env: Some(".env".to_string()),
+            },
+            Project {
+                name: "test3".to_string(),
+                dir: "/path/to/project2".into(),
+                compose: "compose.yml".to_string(),
+                env: Some(".env".to_string()),
+            },
+        ];
+
         MockProjectService {
-            data: vec![
-                Project {
-                    name: "test".to_string(),
-                    dir: "/path/to/project1".into(),
-                    compose: "compose.yml".to_string(),
-                    env: None,
-                },
-                Project {
-                    name: "test2".to_string(),
-                    dir: "/path/to/project2".into(),
-                    compose: "compose.yml".to_string(),
-                    env: Some(".env".to_string()),
-                },
-                Project {
-                    name: "test3".to_string(),
-                    dir: "/path/to/project2".into(),
-                    compose: "compose.yml".to_string(),
-                    env: Some(".env".to_string()),
-                },
-            ],
+            data: Arc::new(Mutex::new(data)),
         }
     }
 }
@@ -58,6 +59,8 @@ impl ProjectServiceTrait for MockProjectService {
     ) -> backend::services::project::Result<Vec<backend::services::project::ProjectInfo>> {
         Ok(self
             .data
+            .lock()
+            .unwrap()
             .iter()
             .map(|data| ProjectInfo {
                 name: data.name.clone(),
@@ -80,24 +83,62 @@ impl ProjectServiceTrait for MockProjectService {
         &self,
         project: &backend::services::project::ProjectInfo,
     ) -> backend::services::project::Result<String> {
-        let project = self
+        let compose = self
             .data
+            .lock()
+            .unwrap()
             .iter()
             .find(|data| data.name == project.name)
-            .unwrap();
-        Ok(project.compose.clone())
+            .unwrap()
+            .compose
+            .clone();
+        Ok(compose)
     }
 
     fn env(
         &self,
         project: &backend::services::project::ProjectInfo,
     ) -> backend::services::project::Result<Option<String>> {
-        let project = self
+        let env = self
             .data
+            .lock()
+            .unwrap()
             .iter()
             .find(|data| data.name == project.name)
+            .unwrap()
+            .env
+            .clone();
+        Ok(env)
+    }
+
+    fn update_compose(
+        &self,
+        project: &ProjectInfo,
+        compose: String,
+    ) -> backend::services::project::Result<String> {
+        let mut data = self.data.lock().unwrap();
+        let state = data
+            .iter_mut()
+            .find(|data| data.name == project.name)
             .unwrap();
-        Ok(project.env.clone())
+
+        state.compose = compose.clone();
+        Ok(compose)
+    }
+
+    fn update_env(
+        &self,
+        project: &ProjectInfo,
+        env: String,
+    ) -> backend::services::project::Result<String> {
+        let mut data = self.data.lock().unwrap();
+        let state = data
+            .iter_mut()
+            .find(|data| data.name == project.name)
+            .unwrap();
+
+        state.env = Some(env.clone());
+        Ok(env)
     }
 }
 
@@ -139,7 +180,7 @@ impl ContainerServiceTrait for MockContainerService {
         Ok(*self.data.lock().unwrap().get(&project.name).unwrap())
     }
 
-    fn stop(&self, project: &ProjectInfo) -> backend::services::container::Result<bool> {
+    fn stop(&self, project: &ProjectInfo) -> backend::services::container::Result<()> {
         let mut data = self.data.lock().unwrap();
         let state = data.get_mut(&project.name).unwrap();
 
@@ -149,10 +190,10 @@ impl ContainerServiceTrait for MockContainerService {
             return Err(ContainerServiceError::AlreadyStopped(project.name.clone()));
         }
 
-        return Ok(true);
+        return Ok(());
     }
 
-    fn start(&self, project: &ProjectInfo) -> backend::services::container::Result<bool> {
+    fn start(&self, project: &ProjectInfo) -> backend::services::container::Result<()> {
         let mut data = self.data.lock().unwrap();
         let state = data.get_mut(&project.name).unwrap();
 
@@ -162,7 +203,18 @@ impl ContainerServiceTrait for MockContainerService {
             return Err(ContainerServiceError::AlreadyRunning(project.name.clone()));
         }
 
-        return Ok(true);
+        return Ok(());
+    }
+
+    fn update(&self, project: &ProjectInfo) -> backend::services::container::Result<()> {
+        let data = self.data.lock().unwrap();
+        let state = data.get(&project.name).unwrap();
+
+        if !*state {
+            return Err(ContainerServiceError::AlreadyStopped(project.name.clone()));
+        }
+
+        return Ok(());
     }
 }
 
