@@ -165,14 +165,14 @@ impl Default for MockContainerService {
 impl ContainerServiceTrait for MockContainerService {
     fn are_online(
         &self,
-        projects: &Vec<backend::services::project::ProjectInfo>,
+        projects: &[backend::services::project::ProjectInfo],
     ) -> backend::services::container::Result<Vec<bool>> {
         let result: Result<Vec<_>, _> = projects
             .iter()
             .map(|project| self.is_online(project))
             .collect();
 
-        return result;
+        result
     }
 
     fn is_online(
@@ -192,7 +192,7 @@ impl ContainerServiceTrait for MockContainerService {
             return Err(ContainerServiceError::AlreadyStopped(project.name.clone()));
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn start(&self, project: &ProjectInfo) -> backend::services::container::Result<()> {
@@ -205,7 +205,7 @@ impl ContainerServiceTrait for MockContainerService {
             return Err(ContainerServiceError::AlreadyRunning(project.name.clone()));
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn update(&self, project: &ProjectInfo) -> backend::services::container::Result<()> {
@@ -216,7 +216,7 @@ impl ContainerServiceTrait for MockContainerService {
             return Err(ContainerServiceError::AlreadyStopped(project.name.clone()));
         }
 
-        return Ok(());
+        Ok(())
     }
 }
 

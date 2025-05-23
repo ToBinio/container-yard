@@ -4,7 +4,7 @@ use super::{ContainerServiceTrait, ProjectInfo};
 pub struct ContainerService;
 
 impl ContainerServiceTrait for ContainerService {
-    fn are_online(&self, _projects: &Vec<ProjectInfo>) -> super::Result<Vec<bool>> {
+    fn are_online(&self, _projects: &[ProjectInfo]) -> super::Result<Vec<bool>> {
         todo!()
     }
 

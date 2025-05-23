@@ -20,7 +20,7 @@ async fn main() {
         listener,
         app(
             Arc::new(ProjectService::default()),
-            Arc::new(ContainerService::default()),
+            Arc::new(ContainerService),
         ),
     )
     .await

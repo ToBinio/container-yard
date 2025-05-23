@@ -21,12 +21,12 @@ pub fn test_project_service() -> (TempDir, ProjectService) {
     create_dir(&path_project_2).unwrap();
     create_dir(&path_project_3).unwrap();
 
-    File::create(&path_project_1.join("compose.yml"))
+    File::create(path_project_1.join("compose.yml"))
         .unwrap()
         .write_all(b"compose.yml")
         .unwrap();
 
-    File::create(&path_project_1.join(".env"))
+    File::create(path_project_1.join(".env"))
         .unwrap()
         .write_all(b".env")
         .unwrap();

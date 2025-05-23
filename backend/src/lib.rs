@@ -30,9 +30,9 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         match self {
-            AppError::Project(error) => return error.into_response(),
-            AppError::Container(error) => return error.into_response(),
-        };
+            AppError::Project(error) => error.into_response(),
+            AppError::Container(error) => error.into_response(),
+        }
     }
 }
 
@@ -73,8 +73,8 @@ pub fn app(
             post(post_update_env_project),
         )
         .with_state(AppState {
-            project_service: project_service,
-            container_service: container_service,
+            project_service,
+            container_service,
         })
         .layer(
             TraceLayer::new_for_http()
@@ -111,11 +111,11 @@ fn project_details(
     project_service: Arc<dyn ProjectServiceTrait>,
     container_service: Arc<dyn ContainerServiceTrait>,
 ) -> Result<serde_json::Value, AppError> {
-    let is_online = container_service.is_online(&project_info)?;
+    let is_online = container_service.is_online(project_info)?;
     let status = if is_online { "running" } else { "stopped" };
 
-    let compose = project_service.compose(&project_info)?;
-    let env = project_service.env(&project_info)?;
+    let compose = project_service.compose(project_info)?;
+    let env = project_service.env(project_info)?;
 
     let json = if let Some(env) = env {
         json!({
@@ -132,7 +132,7 @@ fn project_details(
         })
     };
 
-    return Ok(json);
+    Ok(json)
 }
 
 async fn get_project_details(
