@@ -8,7 +8,7 @@ impl ProjectServiceTrait for ProjectService {
         todo!()
     }
 
-    fn project(&self, name: String) -> super::Result<ProjectInfo> {
+    fn project(&self, name: &str) -> super::Result<ProjectInfo> {
         todo!()
     }
 

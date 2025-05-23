@@ -10,7 +10,7 @@ pub mod service;
 pub type Result<T> = core::result::Result<T, Error>;
 pub type Error = ProjectServiceError;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ProjectServiceError {
     #[error("Could not find Project {0}")]
     NotFound(String),
@@ -27,7 +27,7 @@ impl IntoResponse for ProjectServiceError {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ProjectInfo {
     pub name: String,
     pub dir: PathBuf,
@@ -35,7 +35,7 @@ pub struct ProjectInfo {
 
 pub trait ProjectServiceTrait: Send + Sync {
     fn all_projects(&self) -> Result<Vec<ProjectInfo>>;
-    fn project(&self, name: String) -> Result<ProjectInfo>;
+    fn project(&self, name: &str) -> Result<ProjectInfo>;
     fn compose(&self, project: &ProjectInfo) -> Result<String>;
     fn update_compose(&self, project: &ProjectInfo, compose: String) -> Result<String>;
     fn env(&self, project: &ProjectInfo) -> Result<Option<String>>;

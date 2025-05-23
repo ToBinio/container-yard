@@ -1,10 +1,11 @@
+use common::server::test_server;
 use serde_json::json;
 
 mod common;
 
 #[tokio::test]
 async fn get_projects() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.get("/projects").await;
 
@@ -27,7 +28,7 @@ async fn get_projects() {
 
 #[tokio::test]
 async fn get_project_details() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.get("/projects/test2").await;
 
@@ -42,7 +43,7 @@ async fn get_project_details() {
 
 #[tokio::test]
 async fn get_project_details_no_env() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.get("/projects/test").await;
 
@@ -56,7 +57,7 @@ async fn get_project_details_no_env() {
 
 #[tokio::test]
 async fn get_project_details_unknown() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.get("/projectss/test404").await;
 
@@ -65,7 +66,7 @@ async fn get_project_details_unknown() {
 
 #[tokio::test]
 async fn stop_project() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/stop/test").await;
 
@@ -79,7 +80,7 @@ async fn stop_project() {
 
 #[tokio::test]
 async fn stop_project_already_stopped() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/stop/test2").await;
 
@@ -88,7 +89,7 @@ async fn stop_project_already_stopped() {
 
 #[tokio::test]
 async fn stop_project_unkown() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/start/test404").await;
 
@@ -97,7 +98,7 @@ async fn stop_project_unkown() {
 
 #[tokio::test]
 async fn start_project() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/start/test2").await;
 
@@ -112,7 +113,7 @@ async fn start_project() {
 
 #[tokio::test]
 async fn start_project_already_started() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/start/test").await;
 
@@ -121,7 +122,7 @@ async fn start_project_already_started() {
 
 #[tokio::test]
 async fn start_project_unkown() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/start/test404").await;
 
@@ -130,7 +131,7 @@ async fn start_project_unkown() {
 
 #[tokio::test]
 async fn update_project() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/update/test").await;
 
@@ -144,7 +145,7 @@ async fn update_project() {
 
 #[tokio::test]
 async fn update_project_already_stopped() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/update/test2").await;
 
@@ -153,7 +154,7 @@ async fn update_project_already_stopped() {
 
 #[tokio::test]
 async fn update_project_unkown() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server.post("/projects/update/test404").await;
 
@@ -162,7 +163,7 @@ async fn update_project_unkown() {
 
 #[tokio::test]
 async fn update_compose_project() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server
         .post("/projects/compose/update/test")
@@ -181,7 +182,7 @@ async fn update_compose_project() {
 
 #[tokio::test]
 async fn update_compose_project_no_compose() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server
         .post("/projects/compose/update/test2")
@@ -193,7 +194,7 @@ async fn update_compose_project_no_compose() {
 
 #[tokio::test]
 async fn update_compose_project_unkown() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server
         .post("/projects/compose/update/test404")
@@ -207,7 +208,7 @@ async fn update_compose_project_unkown() {
 
 #[tokio::test]
 async fn update_env_project() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server
         .post("/projects/env/update/test2")
@@ -227,7 +228,7 @@ async fn update_env_project() {
 
 #[tokio::test]
 async fn update_env_project_no_env_yet() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server
         .post("/projects/env/update/test")
@@ -247,7 +248,7 @@ async fn update_env_project_no_env_yet() {
 
 #[tokio::test]
 async fn update_env_project_no_env() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server
         .post("/projects/env/update/test2")
@@ -259,7 +260,7 @@ async fn update_env_project_no_env() {
 
 #[tokio::test]
 async fn update_env_project_unkown() {
-    let server = common::test_server();
+    let server = test_server();
 
     let response = server
         .post("/projects/env/update/test404")

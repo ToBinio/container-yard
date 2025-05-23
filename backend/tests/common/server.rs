@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -71,7 +73,7 @@ impl ProjectServiceTrait for MockProjectService {
 
     fn project(
         &self,
-        name: String,
+        name: &str,
     ) -> backend::services::project::Result<backend::services::project::ProjectInfo> {
         self.all_projects()?
             .into_iter()

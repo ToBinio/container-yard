@@ -140,7 +140,7 @@ async fn get_project_details(
     State(container_service): State<Arc<dyn ContainerServiceTrait>>,
     Path(project_name): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let project_info = project_service.project(project_name)?;
+    let project_info = project_service.project(&project_name)?;
 
     let json = project_details(&project_info, project_service, container_service)?;
     Ok(Json(json).into_response())
@@ -151,7 +151,7 @@ async fn post_stop_project(
     State(container_service): State<Arc<dyn ContainerServiceTrait>>,
     Path(project_name): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let project_info = project_service.project(project_name)?;
+    let project_info = project_service.project(&project_name)?;
 
     container_service.stop(&project_info)?;
 
@@ -164,7 +164,7 @@ async fn post_start_project(
     State(container_service): State<Arc<dyn ContainerServiceTrait>>,
     Path(project_name): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let project_info = project_service.project(project_name)?;
+    let project_info = project_service.project(&project_name)?;
 
     container_service.start(&project_info)?;
 
@@ -177,7 +177,7 @@ async fn post_update_project(
     State(container_service): State<Arc<dyn ContainerServiceTrait>>,
     Path(project_name): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let project_info = project_service.project(project_name)?;
+    let project_info = project_service.project(&project_name)?;
 
     container_service.update(&project_info)?;
 
@@ -196,7 +196,7 @@ async fn post_update_compose_project(
     Path(project_name): Path<String>,
     extract::Json(update): extract::Json<UpdateCompose>,
 ) -> Result<impl IntoResponse, AppError> {
-    let project_info = project_service.project(project_name)?;
+    let project_info = project_service.project(&project_name)?;
 
     project_service.update_compose(&project_info, update.compose)?;
 
@@ -215,7 +215,7 @@ async fn post_update_env_project(
     Path(project_name): Path<String>,
     extract::Json(update): extract::Json<UpdateEnv>,
 ) -> Result<impl IntoResponse, AppError> {
-    let project_info = project_service.project(project_name)?;
+    let project_info = project_service.project(&project_name)?;
 
     project_service.update_env(&project_info, update.env)?;
 
