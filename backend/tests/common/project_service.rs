@@ -3,6 +3,7 @@
 use std::{
     fs::{File, create_dir},
     io::Write,
+    path::PathBuf,
 };
 
 use backend::services::project::service::ProjectService;
@@ -10,7 +11,7 @@ use tempfile::TempDir;
 
 pub fn test_project_service() -> (TempDir, ProjectService) {
     let dir = TempDir::new().unwrap();
-    let path = dir.path();
+    let path: PathBuf = dir.path().into();
 
     let path_project_1 = path.join("project1");
     let path_project_2 = path.join("project2");
@@ -30,5 +31,5 @@ pub fn test_project_service() -> (TempDir, ProjectService) {
         .write_all(b".env")
         .unwrap();
 
-    (dir, ProjectService::default())
+    (dir, ProjectService::new(path))
 }

@@ -14,15 +14,15 @@ async fn get_projects() {
         projects,
         Ok(vec![
             ProjectInfo {
-                name: "test".to_string(),
+                name: "project1".to_string(),
                 dir: path.join("project1"),
             },
             ProjectInfo {
-                name: "test2".to_string(),
+                name: "project2".to_string(),
                 dir: path.join("project2"),
             },
             ProjectInfo {
-                name: "test3".to_string(),
+                name: "project3".to_string(),
                 dir: path.join("project3"),
             }
         ])
@@ -34,12 +34,12 @@ async fn get_project() {
     let (dir, project_service) = test_project_service();
     let path = dir.path();
 
-    let projects = project_service.project("test2");
+    let projects = project_service.project("project2");
 
     assert_eq!(
         projects,
         Ok(ProjectInfo {
-            name: "test".to_string(),
+            name: "project2".to_string(),
             dir: path.join("project2"),
         })
     )
@@ -49,11 +49,11 @@ async fn get_project() {
 async fn get_project_unknown() {
     let (_dir, project_service) = test_project_service();
 
-    let projects = project_service.project("test404");
+    let projects = project_service.project("project404");
 
     assert_eq!(
         projects,
-        Err(ProjectServiceError::NotFound("test404".to_string()))
+        Err(ProjectServiceError::NotFound("project404".to_string()))
     )
 }
 
@@ -61,7 +61,7 @@ async fn get_project_unknown() {
 async fn get_project_compose() {
     let (_dir, project_service) = test_project_service();
 
-    let project_info = project_service.project("test").unwrap();
+    let project_info = project_service.project("project1").unwrap();
     let projects = project_service.compose(&project_info);
 
     assert_eq!(projects, Ok("compose.yml".to_string()))
@@ -71,12 +71,12 @@ async fn get_project_compose() {
 async fn get_project_compose_missing() {
     let (_dir, project_service) = test_project_service();
 
-    let project_info = project_service.project("test2").unwrap();
+    let project_info = project_service.project("project2").unwrap();
     let projects = project_service.compose(&project_info);
 
     assert_eq!(
         projects,
-        Err(ProjectServiceError::NotFound("test2".to_string()))
+        Err(ProjectServiceError::NotFound("project2".to_string()))
     );
 }
 
@@ -84,7 +84,7 @@ async fn get_project_compose_missing() {
 async fn get_project_env() {
     let (_dir, project_service) = test_project_service();
 
-    let project_info = project_service.project("test").unwrap();
+    let project_info = project_service.project("project1").unwrap();
     let projects = project_service.env(&project_info);
 
     assert_eq!(projects, Ok(Some(".env".to_string())))
@@ -94,7 +94,7 @@ async fn get_project_env() {
 async fn get_project_env_missing() {
     let (_dir, project_service) = test_project_service();
 
-    let project_info = project_service.project("test2").unwrap();
+    let project_info = project_service.project("project2").unwrap();
     let projects = project_service.env(&project_info);
 
     assert_eq!(projects, Ok(None));
@@ -104,7 +104,7 @@ async fn get_project_env_missing() {
 async fn update_project_compose() {
     let (_dir, project_service) = test_project_service();
 
-    let project_info = project_service.project("test").unwrap();
+    let project_info = project_service.project("project1").unwrap();
 
     let projects = project_service.compose(&project_info);
     assert_eq!(projects, Ok("compose.yml".to_string()));
@@ -120,12 +120,12 @@ async fn update_project_compose() {
 async fn update_project_compose_missing() {
     let (_dir, project_service) = test_project_service();
 
-    let project_info = project_service.project("test2").unwrap();
+    let project_info = project_service.project("project2").unwrap();
 
     let projects = project_service.compose(&project_info);
     assert_eq!(
         projects,
-        Err(ProjectServiceError::NotFound("test2".to_string()))
+        Err(ProjectServiceError::NotFound("project2".to_string()))
     );
 
     let projects = project_service.update_compose(&project_info, "newCompose".to_string());
@@ -139,7 +139,7 @@ async fn update_project_compose_missing() {
 async fn update_project_env() {
     let (_dir, project_service) = test_project_service();
 
-    let project_info = project_service.project("test").unwrap();
+    let project_info = project_service.project("project1").unwrap();
 
     let projects = project_service.env(&project_info);
     assert_eq!(projects, Ok(Some(".env".to_string())));
@@ -155,7 +155,7 @@ async fn update_project_env() {
 async fn update_project_env_missing() {
     let (_dir, project_service) = test_project_service();
 
-    let project_info = project_service.project("test2").unwrap();
+    let project_info = project_service.project("project2").unwrap();
 
     let projects = project_service.env(&project_info);
     assert_eq!(projects, Ok(None));

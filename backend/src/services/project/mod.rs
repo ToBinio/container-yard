@@ -14,12 +14,24 @@ pub type Error = ProjectServiceError;
 pub enum ProjectServiceError {
     #[error("Could not find Project {0}")]
     NotFound(String),
+
+    #[error("Failed to read directory at {0}")]
+    FailedToReadDir(String),
+
+    #[error("Failed to read file at {0}")]
+    FailedToReadFile(String),
 }
 
 impl IntoResponse for ProjectServiceError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
             ProjectServiceError::NotFound(_) => (StatusCode::NOT_FOUND, self.to_string()),
+            ProjectServiceError::FailedToReadDir(_) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+            }
+            ProjectServiceError::FailedToReadFile(_) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+            }
         };
 
         let body = Json(json!({ "error": message }));
@@ -27,7 +39,7 @@ impl IntoResponse for ProjectServiceError {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct ProjectInfo {
     pub name: String,
     pub dir: PathBuf,

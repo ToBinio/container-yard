@@ -4,23 +4,23 @@ use super::{ContainerServiceTrait, ProjectInfo};
 pub struct ContainerService;
 
 impl ContainerServiceTrait for ContainerService {
-    fn are_online(&self, projects: &Vec<ProjectInfo>) -> super::Result<Vec<bool>> {
+    fn are_online(&self, _projects: &Vec<ProjectInfo>) -> super::Result<Vec<bool>> {
         todo!()
     }
 
-    fn is_online(&self, project: &ProjectInfo) -> super::Result<bool> {
+    fn is_online(&self, _project: &ProjectInfo) -> super::Result<bool> {
         todo!()
     }
 
-    fn stop(&self, project: &ProjectInfo) -> super::Result<()> {
+    fn stop(&self, _project: &ProjectInfo) -> super::Result<()> {
         todo!()
     }
 
-    fn start(&self, project: &ProjectInfo) -> super::Result<()> {
+    fn start(&self, _project: &ProjectInfo) -> super::Result<()> {
         todo!()
     }
 
-    fn update(&self, project: &ProjectInfo) -> super::Result<()> {
+    fn update(&self, _project: &ProjectInfo) -> super::Result<()> {
         todo!()
     }
 }
