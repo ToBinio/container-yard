@@ -48,8 +48,7 @@ pub struct ProjectInfo {
 pub trait ProjectServiceTrait: Send + Sync {
     fn all_projects(&self) -> Result<Vec<ProjectInfo>>;
     fn project(&self, name: &str) -> Result<ProjectInfo>;
-    fn compose(&self, project: &ProjectInfo) -> Result<String>;
-    fn update_compose(&self, project: &ProjectInfo, compose: String) -> Result<String>;
-    fn env(&self, project: &ProjectInfo) -> Result<Option<String>>;
-    fn update_env(&self, project: &ProjectInfo, env: String) -> Result<String>;
+    fn files(&self, project: &ProjectInfo) -> Result<Vec<String>>;
+    fn read_file(&self, project: &ProjectInfo, file: &str) -> Result<String>;
+    fn update_file(&self, project: &ProjectInfo, file: &str, content: &str) -> Result<String>;
 }

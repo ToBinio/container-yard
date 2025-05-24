@@ -10,16 +10,21 @@ use axum_test::TestServer;
 use backend::{
     app,
     services::{
-        container::{ContainerServiceError, ContainerServiceTrait},
+        container::ContainerServiceTrait,
         project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
     },
 };
+use itertools::Itertools;
 
 struct Project {
     name: String,
     dir: PathBuf,
-    compose: String,
-    env: Option<String>,
+    files: Vec<File>,
+}
+
+struct File {
+    name: String,
+    content: String,
 }
 
 pub struct MockProjectService {
@@ -32,20 +37,38 @@ impl Default for MockProjectService {
             Project {
                 name: "test".to_string(),
                 dir: "/path/to/project1".into(),
-                compose: "compose.yml".to_string(),
-                env: None,
+                files: vec![File {
+                    name: "compose.yml".to_string(),
+                    content: "compose.yml".to_string(),
+                }],
             },
             Project {
                 name: "test2".to_string(),
                 dir: "/path/to/project2".into(),
-                compose: "compose.yml".to_string(),
-                env: Some(".env".to_string()),
+                files: vec![
+                    File {
+                        name: "compose.yml".to_string(),
+                        content: "compose.yml".to_string(),
+                    },
+                    File {
+                        name: ".env".to_string(),
+                        content: ".env".to_string(),
+                    },
+                ],
             },
             Project {
                 name: "test3".to_string(),
                 dir: "/path/to/project2".into(),
-                compose: "compose.yml".to_string(),
-                env: Some(".env".to_string()),
+                files: vec![
+                    File {
+                        name: "compose.yml".to_string(),
+                        content: "compose.yml".to_string(),
+                    },
+                    File {
+                        name: ".env".to_string(),
+                        content: ".env".to_string(),
+                    },
+                ],
             },
         ];
 
@@ -81,66 +104,71 @@ impl ProjectServiceTrait for MockProjectService {
             .ok_or_else(|| ProjectServiceError::NotFound(name.to_string()))
     }
 
-    fn compose(
-        &self,
-        project: &backend::services::project::ProjectInfo,
-    ) -> backend::services::project::Result<String> {
-        let compose = self
+    fn files(&self, project: &ProjectInfo) -> backend::services::project::Result<Vec<String>> {
+        let files = self
             .data
             .lock()
             .unwrap()
             .iter()
             .find(|data| data.name == project.name)
             .unwrap()
-            .compose
-            .clone();
-        Ok(compose)
+            .files
+            .iter()
+            .map(|file| file.name.clone())
+            .collect_vec();
+
+        Ok(files)
     }
 
-    fn env(
+    fn read_file(
         &self,
-        project: &backend::services::project::ProjectInfo,
-    ) -> backend::services::project::Result<Option<String>> {
-        let env = self
+        project: &ProjectInfo,
+        file_name: &str,
+    ) -> backend::services::project::Result<String> {
+        let content = self
             .data
             .lock()
             .unwrap()
             .iter()
             .find(|data| data.name == project.name)
             .unwrap()
-            .env
+            .files
+            .iter()
+            .find(|file| file.name.as_str() == file_name)
+            .ok_or(ProjectServiceError::NotFound(file_name.to_string()))?
+            .content
             .clone();
-        Ok(env)
+
+        Ok(content)
     }
 
-    fn update_compose(
+    fn update_file(
         &self,
         project: &ProjectInfo,
-        compose: String,
+        file_name: &str,
+        content: &str,
     ) -> backend::services::project::Result<String> {
         let mut data = self.data.lock().unwrap();
-        let state = data
+        let project = data
             .iter_mut()
             .find(|data| data.name == project.name)
             .unwrap();
 
-        state.compose = compose.clone();
-        Ok(compose)
-    }
+        let file = project.files.iter_mut().find(|file| file.name == file_name);
 
-    fn update_env(
-        &self,
-        project: &ProjectInfo,
-        env: String,
-    ) -> backend::services::project::Result<String> {
-        let mut data = self.data.lock().unwrap();
-        let state = data
-            .iter_mut()
-            .find(|data| data.name == project.name)
-            .unwrap();
+        match file {
+            Some(file) => {
+                file.content = content.to_string();
+            }
+            None => {
+                project.files.push(File {
+                    name: file_name.to_string(),
+                    content: content.to_string(),
+                });
+            }
+        }
 
-        state.env = Some(env.clone());
-        Ok(env)
+        Ok(content.to_string())
     }
 }
 
@@ -188,8 +216,6 @@ impl ContainerServiceTrait for MockContainerService {
 
         if *state {
             *state = false;
-        } else {
-            return Err(ContainerServiceError::AlreadyStopped(project.name.clone()));
         }
 
         Ok(())
@@ -201,21 +227,12 @@ impl ContainerServiceTrait for MockContainerService {
 
         if !*state {
             *state = true;
-        } else {
-            return Err(ContainerServiceError::AlreadyRunning(project.name.clone()));
         }
 
         Ok(())
     }
 
-    fn update(&self, project: &ProjectInfo) -> backend::services::container::Result<()> {
-        let data = self.data.lock().unwrap();
-        let state = data.get(&project.name).unwrap();
-
-        if !*state {
-            return Err(ContainerServiceError::AlreadyStopped(project.name.clone()));
-        }
-
+    fn pull(&self, _project: &ProjectInfo) -> backend::services::container::Result<()> {
         Ok(())
     }
 }

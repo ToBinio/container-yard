@@ -36,8 +36,7 @@ async fn get_project_details() {
     response.assert_json(&json!({
         "name": "test2",
         "status": "stopped",
-        "compose": "compose.yml",
-        "env": ".env"
+        "files": ["compose.yml", ".env"]
     }));
 }
 
@@ -51,7 +50,7 @@ async fn get_project_details_no_env() {
     response.assert_json(&json!({
         "name": "test",
         "status": "running",
-        "compose": "compose.yml"
+        "files": ["compose.yml"]
     }));
 }
 
@@ -73,18 +72,9 @@ async fn stop_project() {
     response.assert_json(&json!({
         "name": "test",
         "status": "stopped",
-        "compose": "compose.yml"
+        "files": ["compose.yml"]
     }));
     response.assert_status_ok();
-}
-
-#[tokio::test]
-async fn stop_project_already_stopped() {
-    let server = test_server();
-
-    let response = server.post("/projects/stop/test2").await;
-
-    response.assert_status_bad_request();
 }
 
 #[tokio::test]
@@ -105,19 +95,9 @@ async fn start_project() {
     response.assert_json(&json!({
         "name": "test2",
         "status": "running",
-        "compose": "compose.yml",
-        "env": ".env"
+        "files": ["compose.yml", ".env"]
     }));
     response.assert_status_ok();
-}
-
-#[tokio::test]
-async fn start_project_already_started() {
-    let server = test_server();
-
-    let response = server.post("/projects/start/test").await;
-
-    response.assert_status_bad_request();
 }
 
 #[tokio::test]
@@ -130,142 +110,94 @@ async fn start_project_unkown() {
 }
 
 #[tokio::test]
-async fn update_project() {
+async fn restart_project() {
     let server = test_server();
 
-    let response = server.post("/projects/update/test").await;
+    let response = server.post("/projects/restart/test").await;
 
     response.assert_json(&json!({
         "name": "test",
         "status": "running",
-        "compose": "compose.yml"
+        "files": ["compose.yml"]
     }));
     response.assert_status_ok();
 }
 
 #[tokio::test]
-async fn update_project_already_stopped() {
+async fn restart_project_unkown() {
     let server = test_server();
 
-    let response = server.post("/projects/update/test2").await;
-
-    response.assert_status_bad_request();
-}
-
-#[tokio::test]
-async fn update_project_unkown() {
-    let server = test_server();
-
-    let response = server.post("/projects/update/test404").await;
+    let response = server.post("/projects/restart/test404").await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
-async fn update_compose_project() {
+async fn get_project_file() {
     let server = test_server();
 
-    let response = server
-        .post("/projects/compose/update/test")
-        .json(&json!({
-            "compose": "newCompose",
-        }))
-        .await;
+    let response = server.get("/projects/test2?file=compose.yml").await;
 
-    response.assert_json(&json!({
-        "name": "test",
-        "status": "running",
-        "compose": "newCompose"
-    }));
     response.assert_status_ok();
+    response.assert_json(&json!({
+        "name": "compose.yml",
+        "content": "compose.yml"
+    }));
 }
 
 #[tokio::test]
-async fn update_compose_project_no_compose() {
+async fn get_project_unknown_file() {
     let server = test_server();
 
-    let response = server
-        .post("/projects/compose/update/test2")
-        .json(&json!({}))
-        .await;
-
-    response.assert_status_unprocessable_entity();
-}
-
-#[tokio::test]
-async fn update_compose_project_unkown() {
-    let server = test_server();
-
-    let response = server
-        .post("/projects/compose/update/test404")
-        .json(&json!({
-            "compose": "newCompose",
-        }))
-        .await;
+    let response = server.get("/projects/test2?file=unknown").await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
-async fn update_env_project() {
+async fn update_file_project() {
     let server = test_server();
 
     let response = server
-        .post("/projects/env/update/test2")
+        .post("/projects/test2?file=compose.yml")
         .json(&json!({
-            "env": "newEnv",
+            "content": "newCompose",
         }))
         .await;
 
     response.assert_json(&json!({
-        "name": "test2",
-        "status": "stopped",
-        "compose": "compose.yml",
-        "env": "newEnv"
+        "name": "compose.yml",
+        "content": "newCompose"
     }));
     response.assert_status_ok();
 }
 
 #[tokio::test]
-async fn update_env_project_no_env_yet() {
+async fn update_unknown_file_project() {
     let server = test_server();
 
     let response = server
-        .post("/projects/env/update/test")
+        .post("/projects/test2?file=unknown")
         .json(&json!({
-            "env": "newEnv",
+            "content": "content",
         }))
         .await;
 
     response.assert_json(&json!({
-        "name": "test",
-        "status": "running",
-        "compose": "compose.yml",
-        "env": "newEnv"
+        "name": "unknown",
+        "content": "content"
     }));
     response.assert_status_ok();
 }
 
 #[tokio::test]
-async fn update_env_project_no_env() {
+async fn update_file_unknown_project() {
     let server = test_server();
 
     let response = server
-        .post("/projects/env/update/test2")
-        .json(&json!({}))
-        .await;
-
-    response.assert_status_unprocessable_entity();
-}
-
-#[tokio::test]
-async fn update_env_project_unkown() {
-    let server = test_server();
-
-    let response = server
-        .post("/projects/env/update/test404")
+        .post("/projects/test404?file=compose.yml")
         .json(&json!({
-            "env": "newEnv",
+            "content": "newCompose",
         }))
         .await;
 

@@ -62,39 +62,17 @@ impl ContainerServiceTrait for ContainerService {
     }
 
     fn stop(&self, project: &ProjectInfo) -> super::Result<()> {
-        if !self.is_online(project)? {
-            return Err(ContainerServiceError::AlreadyStopped(
-                project.name.to_string(),
-            ));
-        }
-
         self.exec_docker_command(project, &["compose", "down"])?;
-
         Ok(())
     }
 
     fn start(&self, project: &ProjectInfo) -> super::Result<()> {
-        if self.is_online(project)? {
-            return Err(ContainerServiceError::AlreadyRunning(
-                project.name.to_string(),
-            ));
-        }
-
         self.exec_docker_command(project, &["compose", "up", "-d"])?;
-
         Ok(())
     }
 
-    fn update(&self, project: &ProjectInfo) -> super::Result<()> {
-        if !self.is_online(project)? {
-            return Err(ContainerServiceError::AlreadyStopped(
-                project.name.to_string(),
-            ));
-        }
-
+    fn pull(&self, project: &ProjectInfo) -> super::Result<()> {
         self.exec_docker_command(project, &["compose", "pull"])?;
-        self.exec_docker_command(project, &["compose", "up", "-d"])?;
-
         Ok(())
     }
 }

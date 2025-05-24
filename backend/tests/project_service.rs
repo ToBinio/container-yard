@@ -58,111 +58,55 @@ async fn get_project_unknown() {
 }
 
 #[tokio::test]
-async fn get_project_compose() {
+async fn get_project_files() {
     let (_dir, project_service) = test_project_service();
 
     let project_info = project_service.project("project1").unwrap();
-    let projects = project_service.compose(&project_info);
+    let mut files = project_service.files(&project_info).unwrap();
 
-    assert_eq!(projects, Ok("compose.yml".to_string()))
+    files.sort();
+
+    assert_eq!(files, vec![".env".to_string(), "compose.yml".to_string()])
 }
 
 #[tokio::test]
-async fn get_project_compose_missing() {
-    let (_dir, project_service) = test_project_service();
-
-    let project_info = project_service.project("project2").unwrap();
-    let projects = project_service.compose(&project_info);
-
-    assert_eq!(
-        projects,
-        Err(ProjectServiceError::NotFound("project2".to_string()))
-    );
-}
-
-#[tokio::test]
-async fn get_project_env() {
+async fn read_project_files() {
     let (_dir, project_service) = test_project_service();
 
     let project_info = project_service.project("project1").unwrap();
-    let projects = project_service.env(&project_info);
+    let content = project_service
+        .read_file(&project_info, "compose.yml")
+        .unwrap();
 
-    assert_eq!(projects, Ok(Some(".env".to_string())))
+    assert_eq!(content, "compose.yml")
 }
 
 #[tokio::test]
-async fn get_project_env_missing() {
-    let (_dir, project_service) = test_project_service();
-
-    let project_info = project_service.project("project2").unwrap();
-    let projects = project_service.env(&project_info);
-
-    assert_eq!(projects, Ok(None));
-}
-
-#[tokio::test]
-async fn update_project_compose() {
+async fn update_project_files() {
     let (_dir, project_service) = test_project_service();
 
     let project_info = project_service.project("project1").unwrap();
+    let content = project_service
+        .update_file(&project_info, "compose.yml", "newCompose")
+        .unwrap();
+    assert_eq!(content, "newCompose");
 
-    let projects = project_service.compose(&project_info);
-    assert_eq!(projects, Ok("compose.yml".to_string()));
-
-    let projects = project_service.update_compose(&project_info, "newCompose".to_string());
-    assert_eq!(projects, Ok("newCompose".to_string()));
-
-    let projects = project_service.compose(&project_info);
-    assert_eq!(projects, Ok("newCompose".to_string()));
+    let content = project_service
+        .read_file(&project_info, "compose.yml")
+        .unwrap();
+    assert_eq!(content, "newCompose");
 }
 
 #[tokio::test]
-async fn update_project_compose_missing() {
-    let (_dir, project_service) = test_project_service();
-
-    let project_info = project_service.project("project2").unwrap();
-
-    let projects = project_service.compose(&project_info);
-    assert_eq!(
-        projects,
-        Err(ProjectServiceError::NotFound("project2".to_string()))
-    );
-
-    let projects = project_service.update_compose(&project_info, "newCompose".to_string());
-    assert_eq!(projects, Ok("newCompose".to_string()));
-
-    let projects = project_service.compose(&project_info);
-    assert_eq!(projects, Ok("newCompose".to_string()));
-}
-
-#[tokio::test]
-async fn update_project_env() {
+async fn update_project_files_non_existin() {
     let (_dir, project_service) = test_project_service();
 
     let project_info = project_service.project("project1").unwrap();
+    let content = project_service
+        .update_file(&project_info, "newFile", "newContent")
+        .unwrap();
+    assert_eq!(content, "newContent");
 
-    let projects = project_service.env(&project_info);
-    assert_eq!(projects, Ok(Some(".env".to_string())));
-
-    let projects = project_service.update_env(&project_info, "new env".to_string());
-    assert_eq!(projects, Ok("new env".to_string()));
-
-    let projects = project_service.env(&project_info);
-    assert_eq!(projects, Ok(Some("new env".to_string())));
-}
-
-#[tokio::test]
-async fn update_project_env_missing() {
-    let (_dir, project_service) = test_project_service();
-
-    let project_info = project_service.project("project2").unwrap();
-
-    let projects = project_service.env(&project_info);
-    assert_eq!(projects, Ok(None));
-
-    let projects = project_service.update_env(&project_info, "new env".to_string());
-    assert_eq!(projects, Ok("new env".to_string()));
-
-    let projects = project_service.env(&project_info);
-    assert_eq!(projects, Ok(Some("new env".to_string())));
+    let content = project_service.read_file(&project_info, "newFile").unwrap();
+    assert_eq!(content, "newContent");
 }

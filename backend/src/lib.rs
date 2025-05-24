@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::{self, FromRef, Path, State},
+    extract::{self, FromRef, Path, Query, State},
     response::{IntoResponse, Response},
     routing::{get, post},
 };
@@ -61,16 +61,12 @@ pub fn app(
     Router::new()
         .route("/projects", get(get_all_projects))
         .route("/projects/{project_name}", get(get_project_details))
+        .route("/projects/{project_name}", post(post_update_project_file))
         .route("/projects/stop/{project_name}", post(post_stop_project))
         .route("/projects/start/{project_name}", post(post_start_project))
-        .route("/projects/update/{project_name}", post(post_update_project))
         .route(
-            "/projects/compose/update/{project_name}",
-            post(post_update_compose_project),
-        )
-        .route(
-            "/projects/env/update/{project_name}",
-            post(post_update_env_project),
+            "/projects/restart/{project_name}",
+            post(post_restart_project),
         )
         .with_state(AppState {
             project_service,
@@ -114,33 +110,39 @@ fn project_details(
     let is_online = container_service.is_online(project_info)?;
     let status = if is_online { "running" } else { "stopped" };
 
-    let compose = project_service.compose(project_info)?;
-    let env = project_service.env(project_info)?;
+    let files = project_service.files(project_info)?;
 
-    let json = if let Some(env) = env {
-        json!({
-            "name": project_info.name,
-            "status": status,
-            "compose": compose,
-            "env": env
-        })
-    } else {
-        json!({
-            "name": project_info.name,
-            "status": status,
-            "compose": compose,
-        })
-    };
+    let json = json!({
+        "name": project_info.name,
+        "status": status,
+        "files": files
+    });
 
     Ok(json)
+}
+
+#[derive(Deserialize)]
+struct FileQuery {
+    file: Option<String>,
 }
 
 async fn get_project_details(
     State(project_service): State<Arc<dyn ProjectServiceTrait>>,
     State(container_service): State<Arc<dyn ContainerServiceTrait>>,
     Path(project_name): Path<String>,
+    Query(query): Query<FileQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let project_info = project_service.project(&project_name)?;
+
+    if let Some(file) = query.file {
+        let content = project_service.read_file(&project_info, &file)?;
+
+        return Ok(Json(json!({
+            "name": file,
+            "content": content,
+        }))
+        .into_response());
+    }
 
     let json = project_details(&project_info, project_service, container_service)?;
     Ok(Json(json).into_response())
@@ -172,53 +174,42 @@ async fn post_start_project(
     Ok(Json(json).into_response())
 }
 
-async fn post_update_project(
+async fn post_restart_project(
     State(project_service): State<Arc<dyn ProjectServiceTrait>>,
     State(container_service): State<Arc<dyn ContainerServiceTrait>>,
     Path(project_name): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let project_info = project_service.project(&project_name)?;
 
-    container_service.update(&project_info)?;
+    container_service.pull(&project_info)?;
+    container_service.start(&project_info)?;
 
     let json = project_details(&project_info, project_service, container_service)?;
     Ok(Json(json).into_response())
 }
 
 #[derive(Deserialize)]
-struct UpdateCompose {
-    compose: String,
-}
-
-async fn post_update_compose_project(
-    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
-    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
-    Path(project_name): Path<String>,
-    extract::Json(update): extract::Json<UpdateCompose>,
-) -> Result<impl IntoResponse, AppError> {
-    let project_info = project_service.project(&project_name)?;
-
-    project_service.update_compose(&project_info, update.compose)?;
-
-    let json = project_details(&project_info, project_service, container_service)?;
-    Ok(Json(json).into_response())
+struct UpdateFile {
+    content: String,
 }
 
 #[derive(Deserialize)]
-struct UpdateEnv {
-    env: String,
+struct FileUpdateQuery {
+    file: String,
 }
 
-async fn post_update_env_project(
+async fn post_update_project_file(
     State(project_service): State<Arc<dyn ProjectServiceTrait>>,
-    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
     Path(project_name): Path<String>,
-    extract::Json(update): extract::Json<UpdateEnv>,
+    Query(query): Query<FileUpdateQuery>,
+    extract::Json(update): extract::Json<UpdateFile>,
 ) -> Result<impl IntoResponse, AppError> {
     let project_info = project_service.project(&project_name)?;
+    let content = project_service.update_file(&project_info, &query.file, &update.content)?;
 
-    project_service.update_env(&project_info, update.env)?;
-
-    let json = project_details(&project_info, project_service, container_service)?;
-    Ok(Json(json).into_response())
+    Ok(Json(json!({
+        "name": query.file,
+        "content": content,
+    }))
+    .into_response())
 }

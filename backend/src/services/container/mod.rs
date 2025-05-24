@@ -16,20 +16,12 @@ pub enum ContainerServiceError {
 
     #[error("Failed to exec command {0}")]
     FailedToExecCommand(String),
-
-    #[error("Project already Stopped {0}")]
-    AlreadyStopped(String),
-
-    #[error("Project already Running {0}")]
-    AlreadyRunning(String),
 }
 
 impl IntoResponse for ContainerServiceError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
             ContainerServiceError::NotFound(_) => (StatusCode::NOT_FOUND, self.to_string()),
-            ContainerServiceError::AlreadyStopped(_) => (StatusCode::BAD_REQUEST, self.to_string()),
-            ContainerServiceError::AlreadyRunning(_) => (StatusCode::BAD_REQUEST, self.to_string()),
             ContainerServiceError::FailedToExecCommand(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
@@ -45,5 +37,5 @@ pub trait ContainerServiceTrait: Send + Sync {
     fn is_online(&self, project: &ProjectInfo) -> Result<bool>;
     fn stop(&self, project: &ProjectInfo) -> Result<()>;
     fn start(&self, project: &ProjectInfo) -> Result<()>;
-    fn update(&self, project: &ProjectInfo) -> Result<()>;
+    fn pull(&self, project: &ProjectInfo) -> Result<()>;
 }
