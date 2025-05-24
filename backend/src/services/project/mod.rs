@@ -39,7 +39,7 @@ impl IntoResponse for ProjectServiceError {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, PartialOrd, Eq, Ord, Clone)]
 pub struct ProjectInfo {
     pub name: String,
     pub dir: PathBuf,

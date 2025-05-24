@@ -14,6 +14,9 @@ pub enum ContainerServiceError {
     #[error("Could not find Project {0}")]
     NotFound(String),
 
+    #[error("Failed to exec command {0}")]
+    FailedToExecCommand(String),
+
     #[error("Project already Stopped {0}")]
     AlreadyStopped(String),
 
@@ -27,6 +30,9 @@ impl IntoResponse for ContainerServiceError {
             ContainerServiceError::NotFound(_) => (StatusCode::NOT_FOUND, self.to_string()),
             ContainerServiceError::AlreadyStopped(_) => (StatusCode::BAD_REQUEST, self.to_string()),
             ContainerServiceError::AlreadyRunning(_) => (StatusCode::BAD_REQUEST, self.to_string()),
+            ContainerServiceError::FailedToExecCommand(_) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+            }
         };
 
         let body = Json(json!({ "error": message }));

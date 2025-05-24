@@ -12,14 +12,14 @@ async fn main() {
         .with_max_level(tracing::Level::INFO)
         .init();
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
 
     info!("listening on {}", listener.local_addr().unwrap());
 
     axum::serve(
         listener,
         app(
-            Arc::new(ProjectService::default()),
+            Arc::new(ProjectService::new("./tests/projects/".into())),
             Arc::new(ContainerService),
         ),
     )
