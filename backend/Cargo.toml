@@ -7,7 +7,7 @@ edition = "2024"
 axum = "0.8.4"
 
 tokio = { version = "1.45.0", features = ["macros", "rt-multi-thread"] }
-tower-http = { version = "0.6.4", features = ["tower", "trace"] }
+tower-http = { version = "0.6.4", features = ["cors", "tower", "trace"] }
 tower = { version = "0.5.2", features = ["util"] }
 
 tracing-subscriber = "0.3.19"

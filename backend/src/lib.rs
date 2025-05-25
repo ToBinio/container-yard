@@ -13,7 +13,11 @@ use services::{
     project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
 };
 use thiserror::Error;
-use tower_http::trace::{self, TraceLayer};
+use tower::ServiceBuilder;
+use tower_http::{
+    cors::{Any, CorsLayer},
+    trace::{self, TraceLayer},
+};
 use tracing::{Level, error};
 
 pub mod services;
@@ -58,6 +62,11 @@ pub fn app(
     project_service: Arc<dyn ProjectServiceTrait>,
     container_service: Arc<dyn ContainerServiceTrait>,
 ) -> Router {
+    let cors_layer = CorsLayer::new()
+        .allow_headers(Any)
+        .allow_origin(Any)
+        .allow_methods(Any);
+
     Router::new()
         .route("/projects", get(get_all_projects))
         .route("/projects/{project_name}", get(get_project_details))
@@ -72,6 +81,7 @@ pub fn app(
             project_service,
             container_service,
         })
+        .layer(ServiceBuilder::new().layer(cors_layer))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))

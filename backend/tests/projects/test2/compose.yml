@@ -1,0 +1,6 @@
+version: "3.8"
+
+services:
+  sleeper:
+    image: alpine
+    command: ["sh", "-c", "while true; do sleep 36000; done"]

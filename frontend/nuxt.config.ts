@@ -7,9 +7,10 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      baseURL: "http://localhost:8080",
+      apiURL: "http://localhost:8081",
     },
   },
+  css: ["~/assets/css/main.css"],
   compatibilityDate: "2025-05-20",
   devtools: { enabled: true },
   modules: ["@nuxt/icon", "@vueuse/nuxt", "@nuxt/eslint"],
