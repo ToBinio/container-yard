@@ -1,0 +1,14 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    network_mode: "host"
+  backend:
+    build: ./backend
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./backend/tests/projects:/app/tests/projects
+      - /var/run/docker.sock:/var/run/docker.sock
+    network_mode: "host"

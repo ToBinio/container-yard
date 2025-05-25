@@ -14,15 +14,15 @@ pub enum ContainerServiceError {
     #[error("Could not find Project {0}")]
     NotFound(String),
 
-    #[error("Failed to exec command {0}")]
-    FailedToExecCommand(String),
+    #[error("Failed to exec command '{command}' - {error}")]
+    FailedToExecCommand { error: String, command: String },
 }
 
 impl IntoResponse for ContainerServiceError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
             ContainerServiceError::NotFound(_) => (StatusCode::NOT_FOUND, self.to_string()),
-            ContainerServiceError::FailedToExecCommand(_) => {
+            ContainerServiceError::FailedToExecCommand { .. } => {
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
         };

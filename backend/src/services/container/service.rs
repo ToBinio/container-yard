@@ -15,13 +15,16 @@ impl ContainerService {
             .current_dir(&project.dir)
             .args(args)
             .output()
-            .map_err(|err| ContainerServiceError::FailedToExecCommand(err.to_string()))?;
+            .map_err(|err| ContainerServiceError::FailedToExecCommand {
+                command: args.join(" ").to_string(),
+                error: err.to_string(),
+            })?;
 
         if !output.status.success() {
-            return Err(ContainerServiceError::FailedToExecCommand(format!(
-                "{:?}",
-                output
-            )));
+            return Err(ContainerServiceError::FailedToExecCommand {
+                command: args.join(" ").to_string(),
+                error: format!("{:?}", output),
+            });
         }
 
         Ok(())
@@ -35,13 +38,16 @@ impl ContainerServiceTrait for ContainerService {
             .arg("ls")
             .arg("-q")
             .output()
-            .map_err(|err| ContainerServiceError::FailedToExecCommand(err.to_string()))?;
+            .map_err(|err| ContainerServiceError::FailedToExecCommand {
+                command: "compose ls -q".to_string(),
+                error: err.to_string(),
+            })?;
 
         if !output.status.success() {
-            return Err(ContainerServiceError::FailedToExecCommand(format!(
-                "{:?}",
-                output
-            )));
+            return Err(ContainerServiceError::FailedToExecCommand {
+                command: "compose ls -q".to_string(),
+                error: format!("{:?}", output),
+            });
         }
 
         let active_projects = String::from_utf8_lossy(&output.stdout)
