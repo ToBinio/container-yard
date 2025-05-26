@@ -19,6 +19,7 @@ serde_json = "1.0.140"
 futures = "0.3.31"
 itertools = "0.14.0"
 thiserror = "2.0.12"
+dotenv = "0.15.0"
 
 [dev-dependencies]
 axum-test = { version = "17.2.0" }
