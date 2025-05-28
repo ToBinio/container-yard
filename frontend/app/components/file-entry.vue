@@ -33,19 +33,28 @@ watch(open, async () => {
   content.value = response.content;
 });
 
-async function onSaveChanges() {
-  const response = await $fetch<{ content: string }>(
-    `/projects/${project}?file=${props.name}`,
-    {
-      body: {
-        content: content.value,
-      },
-      baseURL: config.public.apiURL,
-      method: "POST",
-    },
-  );
+const loading = ref(false);
 
-  content.value = response.content;
+async function onSaveChanges() {
+  loading.value = true;
+  try {
+    const response = await $fetch<{ content: string }>(
+      `/projects/${project}?file=${props.name}`,
+      {
+        body: {
+          content: content.value,
+        },
+        baseURL: config.public.apiURL,
+        method: "POST",
+      },
+    );
+
+    content.value = response.content;
+  } catch (e) {
+    alert(e);
+  }
+
+  loading.value = false;
 }
 </script>
 
@@ -55,7 +64,9 @@ async function onSaveChanges() {
       {{ props.name }}
     </div>
     <DialogRoot v-model:open="open">
-      <DialogTrigger class="border-1 px-1 rounded hover:bg-gray-300">
+      <DialogTrigger
+        class="flex gap-2 items-center border-1 border-neutral-600 bg-neutral-700 hover:bg-neutral-600 shadow-xl px-1"
+      >
         Edit
       </DialogTrigger>
       <DialogPortal>
@@ -63,13 +74,13 @@ async function onSaveChanges() {
           class="fixed top-0 left-0 z-20 h-dvh w-dvw backdrop-blur-[1.5px]"
         />
         <DialogContent
-          class="bg-gray-300 fixed top-1/2 left-1/2 z-30 h-96 w-9/10 max-w-128 -translate-x-1/2 -translate-y-1/2 rounded-lg p-1"
+          class="bg-neutral-700 fixed top-1/2 left-1/2 z-30 h-96 w-9/10 max-w-128 -translate-x-1/2 -translate-y-1/2 rounded-lg p-1"
         >
           <div class="flex flex-col h-full gap-1">
             <div class="w-full flex justify-between">
               <DialogTitle class="text-xl">{{ name }}</DialogTitle>
               <DialogClose
-                class="h-full bg-gray-400 rounded aspect-square"
+                class="aspect-square justify-center flex gap-2 items-center border-1 border-neutral-600 bg-neutral-700 hover:bg-neutral-600 shadow-xl px-1"
                 aria-label="Close"
               >
                 X
@@ -80,9 +91,11 @@ async function onSaveChanges() {
             </VisuallyHidden>
             <textarea
               v-model="content"
-              class="border-secondary w-full flex-1 resize-none rounded border-1 pl-1"
+              class="border-neutral-600 w-full flex-1 resize-none border-1 pl-1"
             />
-            <button @click="onSaveChanges">Save</button>
+            <AsyncButton :loading="loading" @click="onSaveChanges">
+              Save
+            </AsyncButton>
           </div>
         </DialogContent>
       </DialogPortal>

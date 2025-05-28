@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileEntry } from "#components";
+import { AsyncButton, FileEntry } from "#components";
 
 const route = useRoute();
 const project = route.params.project;
@@ -9,55 +9,85 @@ const { data } = useFetch<ProjectDetails>("/projects/" + project, {
   baseURL: config.public.apiURL,
 });
 
-async function onStart() {
-  const response = await $fetch<ProjectDetails>("/projects/start/" + project, {
-    baseURL: config.public.apiURL,
-    method: "POST",
-  });
+const fetching = ref<"start" | "stop" | "restart" | undefined>(undefined);
 
-  data.value = response;
+async function onStart() {
+  fetching.value = "start";
+  try {
+    const response = await $fetch<ProjectDetails>(
+      "/projects/start/" + project,
+      {
+        baseURL: config.public.apiURL,
+        method: "POST",
+      },
+    );
+
+    data.value = response;
+  } catch (e) {
+    alert(e);
+  }
+
+  fetching.value = undefined;
 }
 async function onStop() {
-  const response = await $fetch<ProjectDetails>("/projects/stop/" + project, {
-    baseURL: config.public.apiURL,
-    method: "POST",
-  });
-
-  data.value = response;
-}
-async function onRestart() {
-  const response = await $fetch<ProjectDetails>(
-    "/projects/restart/" + project,
-    {
+  fetching.value = "stop";
+  try {
+    const response = await $fetch<ProjectDetails>("/projects/stop/" + project, {
       baseURL: config.public.apiURL,
       method: "POST",
-    },
-  );
+    });
 
-  data.value = response;
+    data.value = response;
+  } catch (e) {
+    alert(e);
+  }
+
+  fetching.value = undefined;
+}
+async function onRestart() {
+  fetching.value = "restart";
+  try {
+    const response = await $fetch<ProjectDetails>(
+      "/projects/restart/" + project,
+      {
+        baseURL: config.public.apiURL,
+        method: "POST",
+      },
+    );
+
+    data.value = response;
+  } catch (e) {
+    alert(e);
+  }
+
+  fetching.value = undefined;
 }
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4 p-2">
     <div>
-      <h2 class="text-xl">{{ data?.name }}</h2>
-      {{ data?.status }}
+      <h2 class="text-4xl">{{ data?.name }}</h2>
+
+      <div class="flex items-center gap-1">
+        <span
+          class="inline-block w-4 aspect-square bg-emerald-700 rounded-full"
+          :class="{ 'bg-neutral-600!': data?.status == 'stopped' }"
+        />
+        {{ data?.status }}
+      </div>
     </div>
 
     <div class="flex gap-1">
-      <button class="border-1 px-1 rounded hover:bg-gray-300" @click="onStart">
+      <AsyncButton :loading="fetching == 'start'" @click="onStart">
         Start
-      </button>
-      <button class="border-1 px-1 rounded hover:bg-gray-300" @click="onStop">
+      </AsyncButton>
+      <AsyncButton :loading="fetching == 'stop'" @click="onStop">
         Stop
-      </button>
-      <button
-        class="border-1 px-1 rounded hover:bg-gray-300"
-        @click="onRestart"
-      >
+      </AsyncButton>
+      <AsyncButton :loading="fetching == 'restart'" @click="onRestart">
         Restart
-      </button>
+      </AsyncButton>
     </div>
 
     <div class="flex flex-col">
