@@ -67,25 +67,37 @@ async function onRestart() {
 <template>
   <div class="flex flex-col gap-4 p-2">
     <div>
-      <h2 class="text-4xl">{{ data?.name }}</h2>
+      <h2 class="text-4xl">{{ data?.name ?? "Loading..." }}</h2>
 
       <div class="flex items-center gap-1">
         <span
-          class="inline-block w-4 aspect-square bg-emerald-700 rounded-full"
-          :class="{ 'bg-neutral-600!': data?.status == 'stopped' }"
+          class="inline-block w-4 aspect-square bg-neutral-600 rounded-full"
+          :class="{ 'bg-emerald-700!': data?.status == 'running' }"
         />
-        {{ data?.status }}
+        {{ data?.status ?? "stopped" }}
       </div>
     </div>
 
     <div class="flex gap-1">
-      <AsyncButton :loading="fetching == 'start'" @click="onStart">
+      <AsyncButton
+        :loading="fetching == 'start'"
+        :disabled="!!fetching"
+        @click="onStart"
+      >
         Start
       </AsyncButton>
-      <AsyncButton :loading="fetching == 'stop'" @click="onStop">
+      <AsyncButton
+        :loading="fetching == 'stop'"
+        :disabled="!!fetching"
+        @click="onStop"
+      >
         Stop
       </AsyncButton>
-      <AsyncButton :loading="fetching == 'restart'" @click="onRestart">
+      <AsyncButton
+        :loading="fetching == 'restart'"
+        :disabled="!!fetching"
+        @click="onRestart"
+      >
         Restart
       </AsyncButton>
     </div>
