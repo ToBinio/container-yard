@@ -1,0 +1,6 @@
+build version:
+    docker build -t container-yard-backend:{{version}} .
+
+publish version: (build version)
+    docker tag container-yard-backend:{{version}} ghcr.io/tobinio/container-yard-backend:{{version}}
+    docker push ghcr.io/tobinio/container-yard-backend:{{version}}
