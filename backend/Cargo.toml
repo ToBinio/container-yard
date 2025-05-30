@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8.4"
+axum = { version = "0.8.4", features = ["macros"] }
 
 tokio = { version = "1.45.0", features = ["macros", "rt-multi-thread"] }
 tower-http = { version = "0.6.4", features = ["cors", "tower", "trace"] }
@@ -20,6 +20,8 @@ futures = "0.3.31"
 itertools = "0.14.0"
 thiserror = "2.0.12"
 dotenv = "0.15.0"
+jsonwebtoken = "9.3.1"
+axum-extra = { version = "0.10.1", features = ["typed-header"] }
 
 [dev-dependencies]
 axum-test = { version = "17.2.0" }

@@ -5,6 +5,7 @@ use axum::{
     extract::FromRef,
     response::{IntoResponse, Response},
 };
+use jsonwebtoken::{DecodingKey, EncodingKey};
 use services::{
     container::{ContainerServiceError, ContainerServiceTrait},
     project::{ProjectServiceError, ProjectServiceTrait},
@@ -38,10 +39,25 @@ impl IntoResponse for AppError {
     }
 }
 
+pub struct Keys {
+    pub encoding: EncodingKey,
+    pub decoding: DecodingKey,
+}
+
+impl Keys {
+    pub fn new(secret: &[u8]) -> Self {
+        Self {
+            encoding: EncodingKey::from_secret(secret),
+            decoding: DecodingKey::from_secret(secret),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct AppState {
     project_service: Arc<dyn ProjectServiceTrait>,
     container_service: Arc<dyn ContainerServiceTrait>,
+    jwt_keys: Arc<Keys>,
 }
 
 impl FromRef<AppState> for Arc<dyn ProjectServiceTrait> {
@@ -56,9 +72,16 @@ impl FromRef<AppState> for Arc<dyn ContainerServiceTrait> {
     }
 }
 
+impl FromRef<AppState> for Arc<Keys> {
+    fn from_ref(input: &AppState) -> Self {
+        input.jwt_keys.clone()
+    }
+}
+
 pub fn app(
     project_service: Arc<dyn ProjectServiceTrait>,
     container_service: Arc<dyn ContainerServiceTrait>,
+    jwt_keys: Keys,
 ) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_headers(Any)
@@ -68,6 +91,7 @@ pub fn app(
     let state = AppState {
         project_service,
         container_service,
+        jwt_keys: Arc::new(jwt_keys),
     };
 
     Router::new()

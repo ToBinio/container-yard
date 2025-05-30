@@ -24,17 +24,13 @@ pub enum ProjectServiceError {
 
 impl IntoResponse for ProjectServiceError {
     fn into_response(self) -> Response {
-        let (status, message) = match &self {
-            ProjectServiceError::NotFound(_) => (StatusCode::NOT_FOUND, self.to_string()),
-            ProjectServiceError::FailedToReadDir(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
-            }
-            ProjectServiceError::FailedToReadFile(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
-            }
+        let status = match &self {
+            ProjectServiceError::NotFound(_) => StatusCode::NOT_FOUND,
+            ProjectServiceError::FailedToReadDir(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ProjectServiceError::FailedToReadFile(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
-        let body = Json(json!({ "error": message }));
+        let body = Json(json!({ "error": self.to_string() }));
         (status, body).into_response()
     }
 }

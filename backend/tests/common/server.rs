@@ -8,13 +8,14 @@ use std::{
 
 use axum_test::TestServer;
 use backend::{
-    app,
+    Keys, app,
     services::{
         container::ContainerServiceTrait,
         project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
     },
 };
 use itertools::Itertools;
+use serde_json::json;
 
 struct Project {
     name: String,
@@ -240,7 +241,28 @@ impl ContainerServiceTrait for MockContainerService {
 pub fn test_server() -> TestServer {
     let project_service = Arc::new(MockProjectService::default());
     let container_service = Arc::new(MockContainerService::default());
-    let app = app(project_service.clone(), container_service.clone());
+    let app = app(
+        project_service.clone(),
+        container_service.clone(),
+        Keys::new("secret".as_bytes()),
+    );
 
     TestServer::builder().http_transport().build(app).unwrap()
+}
+
+pub async fn auth_test_server() -> (TestServer, String) {
+    let server = test_server();
+
+    let response = server
+        .post("/auth")
+        .json(&json!({
+            "user": "admin",
+            "pw": "password",
+        }))
+        .await;
+
+    let json: serde_json::Value = response.json();
+    let token = json.get("token").unwrap().as_str().unwrap().to_string();
+
+    (server, token)
 }
