@@ -3,12 +3,16 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"
-    network_mode: "host"
+    environment:
+      - NUXT_PUBLIC_API_URL="http://192.168.0.221:8082"
+
   backend:
     build: ./backend
     ports:
-      - "8081:8081"
+      - "8082:8080"
     volumes:
-      - ./backend/tests/projects:/app/tests/projects
       - /var/run/docker.sock:/var/run/docker.sock
-    network_mode: "host"
+      - ./backend/tests/projects:/projects
+    environment:
+      - PORT=8080
+      - PROJECT_DIR=/projects
