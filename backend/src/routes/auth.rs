@@ -19,7 +19,7 @@ use thiserror::Error;
 use crate::{AppState, Keys};
 
 #[derive(Error, Debug)]
-enum AuthError {
+pub enum AuthError {
     #[error("Wrong credentials")]
     WrongCredentials,
 
@@ -95,7 +95,7 @@ async fn authorize(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
+pub struct Claims {
     sub: String,
     iat: u64,
     exp: u64,

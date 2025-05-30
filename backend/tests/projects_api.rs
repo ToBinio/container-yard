@@ -1,13 +1,37 @@
-use common::server::test_server;
+use common::server::{auth_test_server, test_server};
 use serde_json::json;
 
 mod common;
 
 #[tokio::test]
-async fn get_projects() {
+async fn requere_login() {
     let server = test_server();
 
-    let response = server.get("/projects").await;
+    let respones = vec![
+        server.get("/projects").await,
+        server.get("/projects/test2").await,
+        server.get("/projects/test2?file=compose.yml").await,
+        server.post("/projects/stop/test").await,
+        server.post("/projects/start/test").await,
+        server.post("/projects/restart/test").await,
+        server
+            .post("/projects/test2?file=compose.yml")
+            .json(&json!({
+                "content": "newCompose",
+            }))
+            .await,
+    ];
+
+    for response in respones {
+        response.assert_status_unauthorized()
+    }
+}
+
+#[tokio::test]
+async fn get_projects() {
+    let (server, token) = auth_test_server().await;
+
+    let response = server.get("/projects").authorization_bearer(token).await;
 
     response.assert_status_ok();
     response.assert_json(&json!([
@@ -28,9 +52,12 @@ async fn get_projects() {
 
 #[tokio::test]
 async fn get_project_details() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.get("/projects/test2").await;
+    let response = server
+        .get("/projects/test2")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_status_ok();
     response.assert_json(&json!({
@@ -42,9 +69,12 @@ async fn get_project_details() {
 
 #[tokio::test]
 async fn get_project_details_no_env() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.get("/projects/test").await;
+    let response = server
+        .get("/projects/test")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_status_ok();
     response.assert_json(&json!({
@@ -56,18 +86,24 @@ async fn get_project_details_no_env() {
 
 #[tokio::test]
 async fn get_project_details_unknown() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.get("/projectss/test404").await;
+    let response = server
+        .get("/projectss/test404")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn stop_project() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.post("/projects/stop/test").await;
+    let response = server
+        .post("/projects/stop/test")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_json(&json!({
         "name": "test",
@@ -79,18 +115,24 @@ async fn stop_project() {
 
 #[tokio::test]
 async fn stop_project_unkown() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.post("/projects/start/test404").await;
+    let response = server
+        .post("/projects/start/test404")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn start_project() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.post("/projects/start/test2").await;
+    let response = server
+        .post("/projects/start/test2")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_json(&json!({
         "name": "test2",
@@ -102,18 +144,24 @@ async fn start_project() {
 
 #[tokio::test]
 async fn start_project_unkown() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.post("/projects/start/test404").await;
+    let response = server
+        .post("/projects/start/test404")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn restart_project() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.post("/projects/restart/test").await;
+    let response = server
+        .post("/projects/restart/test")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_json(&json!({
         "name": "test",
@@ -125,18 +173,24 @@ async fn restart_project() {
 
 #[tokio::test]
 async fn restart_project_unkown() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.post("/projects/restart/test404").await;
+    let response = server
+        .post("/projects/restart/test404")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn get_project_file() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.get("/projects/test2?file=compose.yml").await;
+    let response = server
+        .get("/projects/test2?file=compose.yml")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_status_ok();
     response.assert_json(&json!({
@@ -147,22 +201,26 @@ async fn get_project_file() {
 
 #[tokio::test]
 async fn get_project_unknown_file() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
-    let response = server.get("/projects/test2?file=unknown").await;
+    let response = server
+        .get("/projects/test2?file=unknown")
+        .authorization_bearer(token)
+        .await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn update_file_project() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
     let response = server
         .post("/projects/test2?file=compose.yml")
         .json(&json!({
             "content": "newCompose",
         }))
+        .authorization_bearer(token)
         .await;
 
     response.assert_json(&json!({
@@ -174,13 +232,14 @@ async fn update_file_project() {
 
 #[tokio::test]
 async fn update_unknown_file_project() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
     let response = server
         .post("/projects/test2?file=unknown")
         .json(&json!({
             "content": "content",
         }))
+        .authorization_bearer(token)
         .await;
 
     response.assert_json(&json!({
@@ -192,13 +251,14 @@ async fn update_unknown_file_project() {
 
 #[tokio::test]
 async fn update_file_unknown_project() {
-    let server = test_server();
+    let (server, token) = auth_test_server().await;
 
     let response = server
         .post("/projects/test404?file=compose.yml")
         .json(&json!({
             "content": "newCompose",
         }))
+        .authorization_bearer(token)
         .await;
 
     response.assert_status_not_found();

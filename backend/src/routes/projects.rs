@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::{self, Path, Query, State},
+    middleware::from_extractor_with_state,
     response::IntoResponse,
     routing::{get, post},
 };
@@ -17,6 +18,8 @@ use crate::{
     },
 };
 
+use super::auth::Claims;
+
 pub fn routes(state: AppState) -> Router {
     Router::new()
         .route("/", get(get_all_projects))
@@ -25,6 +28,7 @@ pub fn routes(state: AppState) -> Router {
         .route("/stop/{project_name}", post(post_stop_project))
         .route("/start/{project_name}", post(post_start_project))
         .route("/restart/{project_name}", post(post_restart_project))
+        .route_layer(from_extractor_with_state::<Claims, _>(state.clone()))
         .with_state(state)
 }
 
