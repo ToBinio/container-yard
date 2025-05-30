@@ -15,7 +15,7 @@ const route = useRoute();
 const project = route.params.project;
 
 const props = defineProps<{ name: string }>();
-const config = useRuntimeConfig();
+const { $api } = useNuxtApp();
 
 const open = ref(false);
 const content = ref("");
@@ -26,11 +26,8 @@ watch(open, async () => {
 
   loadingContent.value = true;
   try {
-    const response = await $fetch<{ content: string }>(
+    const response = await $api<{ content: string }>(
       `/projects/${project}?file=${props.name}`,
-      {
-        baseURL: config.public.apiURL,
-      },
     );
 
     content.value = response.content;
@@ -45,13 +42,12 @@ const loadingUpdate = ref(false);
 async function onSaveChanges() {
   loadingUpdate.value = true;
   try {
-    const response = await $fetch<{ content: string }>(
+    const response = await $api<{ content: string }>(
       `/projects/${project}?file=${props.name}`,
       {
         body: {
           content: content.value,
         },
-        baseURL: config.public.apiURL,
         method: "POST",
       },
     );

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { NuxtLink } from "#components";
 
-const config = useRuntimeConfig();
-const { data } = useFetch<Project[]>("/projects", {
-  baseURL: config.public.apiURL,
+definePageMeta({
+  middleware: ["auth"],
 });
+
+const { data } = useAPI<Project[]>("/projects");
 </script>
 
 <template>

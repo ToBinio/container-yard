@@ -1,5 +1,4 @@
 use common::server::{auth_test_server, test_server};
-use cookie::Cookie;
 use serde_json::json;
 
 mod common;

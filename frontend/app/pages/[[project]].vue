@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import { AsyncButton, FileEntry } from "#components";
 
+definePageMeta({
+  middleware: ["auth"],
+});
+
 const route = useRoute();
 const project = route.params.project;
 
-const config = useRuntimeConfig();
-const { data } = useFetch<ProjectDetails>("/projects/" + project, {
-  baseURL: config.public.apiURL,
-});
+const { $api } = useNuxtApp();
+const { data } = useAPI<ProjectDetails>("/projects/" + project);
 
 const fetching = ref<"start" | "stop" | "restart" | undefined>(undefined);
 
 async function onStart() {
   fetching.value = "start";
   try {
-    const response = await $fetch<ProjectDetails>(
-      "/projects/start/" + project,
-      {
-        baseURL: config.public.apiURL,
-        method: "POST",
-      },
-    );
+    const response = await $api<ProjectDetails>("/projects/start/" + project, {
+      method: "POST",
+    });
 
     data.value = response;
   } catch (e) {
@@ -32,8 +30,7 @@ async function onStart() {
 async function onStop() {
   fetching.value = "stop";
   try {
-    const response = await $fetch<ProjectDetails>("/projects/stop/" + project, {
-      baseURL: config.public.apiURL,
+    const response = await $api<ProjectDetails>("/projects/stop/" + project, {
       method: "POST",
     });
 
@@ -47,10 +44,9 @@ async function onStop() {
 async function onRestart() {
   fetching.value = "restart";
   try {
-    const response = await $fetch<ProjectDetails>(
+    const response = await $api<ProjectDetails>(
       "/projects/restart/" + project,
       {
-        baseURL: config.public.apiURL,
         method: "POST",
       },
     );
