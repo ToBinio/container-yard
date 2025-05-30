@@ -8,7 +8,7 @@ use std::{
 
 use axum_test::TestServer;
 use backend::{
-    Keys, app,
+    AdminAuth, Keys, app,
     services::{
         container::ContainerServiceTrait,
         project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
@@ -246,6 +246,10 @@ pub fn test_server() -> TestServer {
         project_service.clone(),
         container_service.clone(),
         Keys::new("secret".as_bytes()),
+        AdminAuth {
+            name: "admin".to_string(),
+            password: "password".to_string(),
+        },
     );
 
     TestServer::builder().http_transport().build(app).unwrap()

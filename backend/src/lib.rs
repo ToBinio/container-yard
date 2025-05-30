@@ -53,11 +53,17 @@ impl Keys {
     }
 }
 
+pub struct AdminAuth {
+    pub name: String,
+    pub password: String,
+}
+
 #[derive(Clone)]
 pub struct AppState {
     project_service: Arc<dyn ProjectServiceTrait>,
     container_service: Arc<dyn ContainerServiceTrait>,
     jwt_keys: Arc<Keys>,
+    admin_auth: Arc<AdminAuth>,
 }
 
 impl FromRef<AppState> for Arc<dyn ProjectServiceTrait> {
@@ -78,10 +84,17 @@ impl FromRef<AppState> for Arc<Keys> {
     }
 }
 
+impl FromRef<AppState> for Arc<AdminAuth> {
+    fn from_ref(input: &AppState) -> Self {
+        input.admin_auth.clone()
+    }
+}
+
 pub fn app(
     project_service: Arc<dyn ProjectServiceTrait>,
     container_service: Arc<dyn ContainerServiceTrait>,
     jwt_keys: Keys,
+    admin_auth: AdminAuth,
 ) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_headers(Any)
@@ -92,6 +105,7 @@ pub fn app(
         project_service,
         container_service,
         jwt_keys: Arc::new(jwt_keys),
+        admin_auth: Arc::new(admin_auth),
     };
 
     Router::new()

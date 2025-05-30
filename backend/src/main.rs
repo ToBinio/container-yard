@@ -1,7 +1,7 @@
 use std::{env, sync::Arc};
 
 use backend::{
-    Keys, app,
+    AdminAuth, Keys, app,
     services::{container::service::ContainerService, project::service::ProjectService},
 };
 use tracing::{info, warn};
@@ -20,6 +20,14 @@ async fn main() {
         warn!("no secret was set!");
         "noSecret".to_string()
     });
+    let admin_name = env::var("ADMIN_NAME").unwrap_or_else(|_| {
+        warn!("no admin name was set!");
+        "admin".to_string()
+    });
+    let admin_password = env::var("ADMIN_PASSWORD").unwrap_or_else(|_| {
+        warn!("no admin password was set!");
+        "password".to_string()
+    });
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
@@ -34,6 +42,10 @@ async fn main() {
             Arc::new(ProjectService::new(project_dir.into())),
             Arc::new(ContainerService),
             Keys::new(secret.as_bytes()),
+            AdminAuth {
+                name: admin_name,
+                password: admin_password,
+            },
         ),
     )
     .await

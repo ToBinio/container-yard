@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use thiserror::Error;
 
-use crate::{AppState, Keys};
+use crate::{AdminAuth, AppState, Keys};
 
 #[derive(Error, Debug)]
 pub enum AuthError {
@@ -65,14 +65,14 @@ struct AuthPayload {
 
 async fn authorize(
     State(keys): State<Arc<Keys>>,
+    State(admin_auth): State<Arc<AdminAuth>>,
     Json(payload): Json<AuthPayload>,
 ) -> Result<impl IntoResponse, AuthError> {
-    // Check if the user sent the credentials
     if payload.user.is_empty() || payload.pw.is_empty() {
         return Err(AuthError::MissingCredentials);
     }
-    // Here you can check the user credentials from a database
-    if payload.user != "admin" || payload.pw != "password" {
+
+    if payload.user != admin_auth.name || payload.pw != admin_auth.password {
         return Err(AuthError::WrongCredentials);
     }
 
@@ -86,11 +86,10 @@ async fn authorize(
         iat: now,
         exp: now + 60 * 60 * 24 * 30, // 1 month,
     };
-    // Create the authorization token
+
     let token = encode(&Header::default(), &claims, &keys.encoding)
         .map_err(|_| AuthError::TokenCreation)?;
 
-    // Send the authorized token
     Ok(Json(json!({ "token": token})))
 }
 
