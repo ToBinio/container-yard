@@ -16,3 +16,4 @@ services:
     environment:
       - PORT=8080
       - PROJECT_DIR=/projects
+      - SECRET=myBadSecret

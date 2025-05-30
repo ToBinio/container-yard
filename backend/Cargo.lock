@@ -171,6 +171,7 @@ dependencies = [
  "axum",
  "axum-extra",
  "axum-test",
+ "cookie",
  "dotenv",
  "futures",
  "itertools",

@@ -1,4 +1,5 @@
 use common::server::{auth_test_server, test_server};
+use cookie::Cookie;
 use serde_json::json;
 
 mod common;
@@ -53,6 +54,15 @@ async fn validate() {
         .get("/auth/validate")
         .authorization_bearer(token)
         .await;
+
+    response.assert_status_ok();
+}
+
+#[tokio::test]
+async fn validate_cookie() {
+    let (server, _token) = auth_test_server().await;
+
+    let response = server.get("/auth/validate").await;
 
     response.assert_status_ok();
 }

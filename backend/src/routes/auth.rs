@@ -9,8 +9,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router, http::StatusCode, response::IntoResponse};
 
 use axum_extra::TypedHeader;
-use axum_extra::headers::Authorization;
 use axum_extra::headers::authorization::Bearer;
+use axum_extra::headers::{Authorization, Cookie};
 use jsonwebtoken::{Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -109,14 +109,25 @@ impl FromRequestParts<AppState> for Claims {
         keys: &AppState,
     ) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header
-        let TypedHeader(Authorization(bearer)) = parts
-            .extract::<TypedHeader<Authorization<Bearer>>>()
-            .await
-            .map_err(|_| AuthError::InvalidToken)?;
+        let token = if let Ok(TypedHeader(Authorization(bearer))) =
+            parts.extract::<TypedHeader<Authorization<Bearer>>>().await
+        {
+            bearer.token().to_string()
+        } else {
+            // Fallback to cookie named "token"
+            let cookies = parts
+                .extract::<TypedHeader<Cookie>>()
+                .await
+                .map_err(|_| AuthError::InvalidToken)?;
+            cookies
+                .get("token")
+                .ok_or(AuthError::InvalidToken)?
+                .to_string()
+        };
 
         // Decode the user data
         let token_data = decode::<Claims>(
-            bearer.token(),
+            &token,
             &keys.jwt_keys.decoding.clone(),
             &Validation::default(),
         )

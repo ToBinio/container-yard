@@ -14,6 +14,7 @@ use backend::{
         project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
     },
 };
+use cookie::Cookie;
 use itertools::Itertools;
 use serde_json::json;
 
@@ -251,7 +252,7 @@ pub fn test_server() -> TestServer {
 }
 
 pub async fn auth_test_server() -> (TestServer, String) {
-    let server = test_server();
+    let mut server = test_server();
 
     let response = server
         .post("/auth")
@@ -263,6 +264,8 @@ pub async fn auth_test_server() -> (TestServer, String) {
 
     let json: serde_json::Value = response.json();
     let token = json.get("token").unwrap().as_str().unwrap().to_string();
+
+    server.add_cookie(Cookie::new("token", token.clone()));
 
     (server, token)
 }
