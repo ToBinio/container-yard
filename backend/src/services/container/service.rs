@@ -4,6 +4,7 @@ use std::{
 };
 
 use itertools::Itertools;
+use tracing::warn;
 
 use crate::services::container::ContainerServiceError;
 
@@ -25,17 +26,23 @@ impl ContainerService {
         };
 
         let output = command.arg("compose").args(args).output().map_err(|err| {
-            ContainerServiceError::FailedToExecCommand {
+            let error = ContainerServiceError::FailedToExecCommand {
                 command: args.join(" ").to_string(),
                 error: err.to_string(),
-            }
+            };
+            warn!("{}", error);
+
+            return error;
         })?;
 
         if !output.status.success() {
-            return Err(ContainerServiceError::FailedToExecCommand {
+            let error = ContainerServiceError::FailedToExecCommand {
                 command: args.join(" ").to_string(),
                 error: format!("{:?}", output),
-            });
+            };
+            warn!("{}", error);
+
+            return Err(error);
         }
 
         Ok(output)
