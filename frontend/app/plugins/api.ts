@@ -13,6 +13,9 @@ export default defineNuxtPlugin((nuxtApp) => {
       if (response.status === 401) {
         token.value = undefined;
         await nuxtApp.runWithContext(() => navigateTo("/login"));
+      } else {
+        //TODO - show in toast
+        alert(response._data.error);
       }
     },
   });

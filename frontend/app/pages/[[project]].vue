@@ -15,6 +15,7 @@ const fetching = ref<"start" | "stop" | "restart" | undefined>(undefined);
 
 async function onStart() {
   fetching.value = "start";
+
   try {
     const response = await $api<ProjectDetails>("/projects/start/" + project, {
       method: "POST",
@@ -22,7 +23,7 @@ async function onStart() {
 
     data.value = response;
   } catch (e) {
-    alert(e);
+    console.error(e);
   }
 
   fetching.value = undefined;
@@ -36,7 +37,7 @@ async function onStop() {
 
     data.value = response;
   } catch (e) {
-    alert(e);
+    console.error(e);
   }
 
   fetching.value = undefined;
@@ -53,7 +54,7 @@ async function onRestart() {
 
     data.value = response;
   } catch (e) {
-    alert(e);
+    console.error(e);
   }
 
   fetching.value = undefined;
