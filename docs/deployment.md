@@ -33,7 +33,8 @@ services:
     ports:
       - "<backend-port>:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock # access to the docker.sock outside of the host
+      - $HOME/.docker:/root/.docker # access to the login data of the host
       - ../:/projects
     environment:
       - PORT=8080
