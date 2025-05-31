@@ -1,4 +1,7 @@
-use std::process::Command;
+use std::{
+    path::PathBuf,
+    process::{Command, Output},
+};
 
 use itertools::Itertools;
 
@@ -10,15 +13,23 @@ use super::{ContainerServiceTrait, ProjectInfo};
 pub struct ContainerService;
 
 impl ContainerService {
-    fn exec_docker_command(&self, project: &ProjectInfo, args: &[&str]) -> super::Result<()> {
-        let output = Command::new("docker")
-            .current_dir(&project.dir)
-            .args(args)
-            .output()
-            .map_err(|err| ContainerServiceError::FailedToExecCommand {
+    fn exec_docker_compose_command(
+        &self,
+        base_dir: Option<&PathBuf>,
+        args: &[&str],
+    ) -> super::Result<Output> {
+        let mut command = Command::new("docker");
+
+        if let Some(path) = base_dir {
+            command.current_dir(path);
+        };
+
+        let output = command.arg("compose").args(args).output().map_err(|err| {
+            ContainerServiceError::FailedToExecCommand {
                 command: args.join(" ").to_string(),
                 error: err.to_string(),
-            })?;
+            }
+        })?;
 
         if !output.status.success() {
             return Err(ContainerServiceError::FailedToExecCommand {
@@ -27,28 +38,13 @@ impl ContainerService {
             });
         }
 
-        Ok(())
+        Ok(output)
     }
 }
 
 impl ContainerServiceTrait for ContainerService {
     fn are_online(&self, projects: &[ProjectInfo]) -> super::Result<Vec<bool>> {
-        let output = Command::new("docker")
-            .arg("compose")
-            .arg("ls")
-            .arg("-q")
-            .output()
-            .map_err(|err| ContainerServiceError::FailedToExecCommand {
-                command: "compose ls -q".to_string(),
-                error: err.to_string(),
-            })?;
-
-        if !output.status.success() {
-            return Err(ContainerServiceError::FailedToExecCommand {
-                command: "compose ls -q".to_string(),
-                error: format!("{:?}", output),
-            });
-        }
+        let output = self.exec_docker_compose_command(None, &["ls", "-q"])?;
 
         let active_projects = String::from_utf8_lossy(&output.stdout)
             .lines()
@@ -68,17 +64,17 @@ impl ContainerServiceTrait for ContainerService {
     }
 
     fn stop(&self, project: &ProjectInfo) -> super::Result<()> {
-        self.exec_docker_command(project, &["compose", "down"])?;
+        self.exec_docker_compose_command(Some(&project.dir), &["down"])?;
         Ok(())
     }
 
     fn start(&self, project: &ProjectInfo) -> super::Result<()> {
-        self.exec_docker_command(project, &["compose", "up", "-d"])?;
+        self.exec_docker_compose_command(Some(&project.dir), &["up", "-d"])?;
         Ok(())
     }
 
     fn pull(&self, project: &ProjectInfo) -> super::Result<()> {
-        self.exec_docker_command(project, &["compose", "pull"])?;
+        self.exec_docker_compose_command(Some(&project.dir), &["pull"])?;
         Ok(())
     }
 }
