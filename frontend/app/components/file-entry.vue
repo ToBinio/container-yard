@@ -53,6 +53,7 @@ async function onSaveChanges() {
     );
 
     content.value = response.content;
+    open.value = false;
   } catch (e) {
     alert(e);
   }
