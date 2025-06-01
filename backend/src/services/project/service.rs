@@ -18,6 +18,15 @@ impl ProjectService {
     pub fn new(base_path: PathBuf) -> ProjectService {
         Self { base_path }
     }
+
+    pub fn save_file_path(file: &str) -> super::Result<PathBuf> {
+        let path = PathBuf::from(file);
+        if path.components().count() != 1 {
+            return Err(ProjectServiceError::NotProjectFile(file.to_string()));
+        }
+
+        Ok(path)
+    }
 }
 
 impl ProjectServiceTrait for ProjectService {
@@ -48,7 +57,7 @@ impl ProjectServiceTrait for ProjectService {
             .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
 
         if !exist {
-            return Err(ProjectServiceError::NotFound(name.to_string()));
+            return Err(ProjectServiceError::ProjectNotFound(name.to_string()));
         }
 
         Ok(ProjectInfo {
@@ -56,58 +65,6 @@ impl ProjectServiceTrait for ProjectService {
             dir: path,
         })
     }
-
-    // fn compose(&self, project: &ProjectInfo) -> super::Result<String> {
-    //     let path = project.dir.join("compose.yml");
-
-    //     fs::read_to_string(&path)
-    //         .inspect_err(|err| error!("{}", err))
-    //         .map_err(|_| ProjectServiceError::NotFound(project.name.to_string()))
-    // }
-
-    // fn update_compose(&self, project: &ProjectInfo, compose: String) -> super::Result<String> {
-    //     let path = project.dir.join("compose.yml");
-    //     let mut file = File::create(&path)
-    //         .inspect_err(|err| error!("{}", err))
-    //         .map_err(|_| ProjectServiceError::NotFound(project.name.to_string()))?;
-
-    //     file.write_all(compose.as_bytes())
-    //         .inspect_err(|err| error!("{}", err))
-    //         .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
-
-    //     Ok(compose)
-    // }
-
-    // fn env(&self, project: &ProjectInfo) -> super::Result<Option<String>> {
-    //     let path = project.dir.join(".env");
-
-    //     let exist = fs::exists(&path)
-    //         .inspect_err(|err| error!("{}", err))
-    //         .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
-
-    //     if !exist {
-    //         return Ok(None);
-    //     }
-
-    //     Ok(Some(
-    //         fs::read_to_string(&path)
-    //             .inspect_err(|err| error!("{}", err))
-    //             .map_err(|_| ProjectServiceError::NotFound(project.name.to_string()))?,
-    //     ))
-    // }
-
-    // fn update_env(&self, project: &ProjectInfo, env: String) -> super::Result<String> {
-    //     let path = project.dir.join(".env");
-    //     let mut file = File::create(&path)
-    //         .inspect_err(|err| error!("{}", err))
-    //         .map_err(|_| ProjectServiceError::NotFound(project.name.to_string()))?;
-
-    //     file.write_all(env.as_bytes())
-    //         .inspect_err(|err| error!("{}", err))
-    //         .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
-
-    //     Ok(env)
-    // }
 
     fn files(&self, project: &ProjectInfo) -> super::Result<Vec<String>> {
         let dir = fs::read_dir(&project.dir)
@@ -126,19 +83,23 @@ impl ProjectServiceTrait for ProjectService {
     }
 
     fn read_file(&self, project: &ProjectInfo, file: &str) -> super::Result<String> {
-        let path = project.dir.join(file);
+        let path = Self::save_file_path(file)?;
+        let path = project.dir.join(path);
 
         let exist = fs::exists(&path)
             .inspect_err(|err| error!("{}", err))
             .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
 
         if !exist {
-            return Err(ProjectServiceError::NotFound(format!("{:?}", path)));
+            return Err(ProjectServiceError::FileNotFound {
+                project: project.name.to_string(),
+                file: format!("{:?}", path),
+            });
         }
 
         let content = fs::read_to_string(&path)
             .inspect_err(|err| error!("{}", err))
-            .map_err(|_| ProjectServiceError::NotFound(project.name.to_string()))?;
+            .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
 
         Ok(content)
     }
@@ -149,10 +110,12 @@ impl ProjectServiceTrait for ProjectService {
         file: &str,
         content: &str,
     ) -> super::Result<String> {
-        let path = project.dir.join(file);
+        let path = Self::save_file_path(file)?;
+        let path = project.dir.join(path);
+
         let mut file = File::create(&path)
             .inspect_err(|err| error!("{}", err))
-            .map_err(|_| ProjectServiceError::NotFound(project.name.to_string()))?;
+            .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
 
         file.write_all(content.as_bytes())
             .inspect_err(|err| error!("{}", err))

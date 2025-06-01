@@ -103,7 +103,7 @@ impl ProjectServiceTrait for MockProjectService {
         self.all_projects()?
             .into_iter()
             .find(|project| project.name == name)
-            .ok_or_else(|| ProjectServiceError::NotFound(name.to_string()))
+            .ok_or_else(|| ProjectServiceError::ProjectNotFound(name.to_string()))
     }
 
     fn files(&self, project: &ProjectInfo) -> backend::services::project::Result<Vec<String>> {
@@ -137,7 +137,10 @@ impl ProjectServiceTrait for MockProjectService {
             .files
             .iter()
             .find(|file| file.name.as_str() == file_name)
-            .ok_or(ProjectServiceError::NotFound(file_name.to_string()))?
+            .ok_or(ProjectServiceError::FileNotFound {
+                file: file_name.to_string(),
+                project: project.name.to_string(),
+            })?
             .content
             .clone();
 

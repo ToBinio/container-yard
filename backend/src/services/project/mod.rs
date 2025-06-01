@@ -13,21 +13,29 @@ pub type Error = ProjectServiceError;
 #[derive(Error, Debug, PartialEq)]
 pub enum ProjectServiceError {
     #[error("Could not find Project {0}")]
-    NotFound(String),
+    ProjectNotFound(String),
+
+    #[error("Could not find file {file} for {project}")]
+    FileNotFound { project: String, file: String },
 
     #[error("Failed to read directory at {0}")]
     FailedToReadDir(String),
 
     #[error("Failed to read file at {0}")]
     FailedToReadFile(String),
+
+    #[error("Cannot access files outside of project dir - tried to access {0}")]
+    NotProjectFile(String),
 }
 
 impl IntoResponse for ProjectServiceError {
     fn into_response(self) -> Response {
         let status = match &self {
-            ProjectServiceError::NotFound(_) => StatusCode::NOT_FOUND,
+            ProjectServiceError::ProjectNotFound(_) => StatusCode::NOT_FOUND,
+            ProjectServiceError::FileNotFound { .. } => StatusCode::NOT_FOUND,
             ProjectServiceError::FailedToReadDir(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProjectServiceError::FailedToReadFile(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ProjectServiceError::NotProjectFile(_) => StatusCode::BAD_REQUEST,
         };
 
         let body = Json(json!({ "error": self.to_string() }));

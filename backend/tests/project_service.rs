@@ -53,7 +53,9 @@ async fn get_project_unknown() {
 
     assert_eq!(
         projects,
-        Err(ProjectServiceError::NotFound("project404".to_string()))
+        Err(ProjectServiceError::ProjectNotFound(
+            "project404".to_string()
+        ))
     )
 }
 
@@ -70,7 +72,7 @@ async fn get_project_files() {
 }
 
 #[tokio::test]
-async fn read_project_files() {
+async fn read_project_file() {
     let (_dir, project_service) = test_project_service();
 
     let project_info = project_service.project("project1").unwrap();
@@ -82,7 +84,31 @@ async fn read_project_files() {
 }
 
 #[tokio::test]
-async fn update_project_files() {
+async fn read_project_file_not_base() {
+    let (_dir, project_service) = test_project_service();
+
+    let project_info = project_service.project("project1").unwrap();
+    let error = project_service.read_file(&project_info, "sub/text.txt");
+
+    assert_eq!(
+        error,
+        Err(ProjectServiceError::NotProjectFile(
+            "sub/text.txt".to_string()
+        ))
+    );
+
+    let error = project_service.read_file(&project_info, "../project3/compose.yml");
+
+    assert_eq!(
+        error,
+        Err(ProjectServiceError::NotProjectFile(
+            "../project3/compose.yml".to_string()
+        ))
+    );
+}
+
+#[tokio::test]
+async fn update_project_file() {
     let (_dir, project_service) = test_project_service();
 
     let project_info = project_service.project("project1").unwrap();
@@ -98,7 +124,7 @@ async fn update_project_files() {
 }
 
 #[tokio::test]
-async fn update_project_files_non_existin() {
+async fn update_project_file_non_existin() {
     let (_dir, project_service) = test_project_service();
 
     let project_info = project_service.project("project1").unwrap();
@@ -109,4 +135,28 @@ async fn update_project_files_non_existin() {
 
     let content = project_service.read_file(&project_info, "newFile").unwrap();
     assert_eq!(content, "newContent");
+}
+
+#[tokio::test]
+async fn update_project_file_not_base() {
+    let (_dir, project_service) = test_project_service();
+
+    let project_info = project_service.project("project1").unwrap();
+    let error = project_service.update_file(&project_info, "sub/text.txt", "content");
+
+    assert_eq!(
+        error,
+        Err(ProjectServiceError::NotProjectFile(
+            "sub/text.txt".to_string()
+        ))
+    );
+
+    let error = project_service.update_file(&project_info, "../project3/compose.yml", "content");
+
+    assert_eq!(
+        error,
+        Err(ProjectServiceError::NotProjectFile(
+            "../project3/compose.yml".to_string()
+        ))
+    );
 }
