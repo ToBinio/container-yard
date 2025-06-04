@@ -4,12 +4,13 @@ use serde_json::json;
 mod common;
 
 #[tokio::test]
-async fn requere_login() {
+async fn require_login() {
     let server = test_server();
 
-    let respones = vec![
+    let responses = vec![
         server.get("/projects").await,
         server.get("/projects/test2").await,
+        server.post("/projects/create/test2").await,
         server.get("/projects/test2?file=compose.yml").await,
         server.post("/projects/stop/test").await,
         server.post("/projects/start/test").await,
@@ -22,7 +23,7 @@ async fn requere_login() {
             .await,
     ];
 
-    for response in respones {
+    for response in responses {
         response.assert_status_unauthorized()
     }
 }
@@ -226,4 +227,27 @@ async fn update_file_unknown_project() {
         .await;
 
     response.assert_status_not_found();
+}
+
+#[tokio::test]
+async fn create_new_project() {
+    let (server, _token) = auth_test_server().await;
+
+    let response = server.post("/projects/create/newProject").await;
+
+    response.assert_json(&json!({
+        "name": "newProject",
+        "status": "stopped",
+        "files": ["compose.yml"]
+    }));
+    response.assert_status_ok();
+}
+
+#[tokio::test]
+async fn create_already_existing_project() {
+    let (server, _token) = auth_test_server().await;
+
+    let response = server.post("/projects/create/test2").await;
+
+    response.assert_status_bad_request();
 }

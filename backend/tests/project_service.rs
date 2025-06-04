@@ -92,7 +92,7 @@ async fn read_project_file_not_base() {
 
     assert_eq!(
         error,
-        Err(ProjectServiceError::NotProjectFile(
+        Err(ProjectServiceError::InvalidFilePath(
             "sub/text.txt".to_string()
         ))
     );
@@ -101,7 +101,7 @@ async fn read_project_file_not_base() {
 
     assert_eq!(
         error,
-        Err(ProjectServiceError::NotProjectFile(
+        Err(ProjectServiceError::InvalidFilePath(
             "../project3/compose.yml".to_string()
         ))
     );
@@ -146,7 +146,7 @@ async fn update_project_file_not_base() {
 
     assert_eq!(
         error,
-        Err(ProjectServiceError::NotProjectFile(
+        Err(ProjectServiceError::InvalidFilePath(
             "sub/text.txt".to_string()
         ))
     );
@@ -155,8 +155,65 @@ async fn update_project_file_not_base() {
 
     assert_eq!(
         error,
-        Err(ProjectServiceError::NotProjectFile(
+        Err(ProjectServiceError::InvalidFilePath(
             "../project3/compose.yml".to_string()
+        ))
+    );
+}
+
+#[tokio::test]
+async fn create_new_project() {
+    let (dir, project_service) = test_project_service();
+    let path = dir.path();
+
+    let project_info = project_service.create("newProject");
+
+    assert_eq!(
+        project_info,
+        Ok(ProjectInfo {
+            name: "newProject".to_string(),
+            dir: path.join("newProject"),
+        })
+    );
+
+    let files = project_service.files(&project_info.unwrap());
+
+    assert_eq!(files, Ok(vec!["compose.yml".to_string()]));
+}
+
+#[tokio::test]
+async fn create_already_existing_project() {
+    let (_dir, project_service) = test_project_service();
+
+    let project_info = project_service.create("project1");
+
+    assert_eq!(
+        project_info,
+        Err(ProjectServiceError::ProjectAlreadyExists(
+            "project1".to_string()
+        ))
+    );
+}
+
+#[tokio::test]
+async fn create_invalid_project() {
+    let (_dir, project_service) = test_project_service();
+
+    let error = project_service.create("test/newProject");
+
+    assert_eq!(
+        error,
+        Err(ProjectServiceError::InvalidFilePath(
+            "test/newProject".to_string()
+        ))
+    );
+
+    let error = project_service.create("../newProject");
+
+    assert_eq!(
+        error,
+        Err(ProjectServiceError::InvalidFilePath(
+            "../newProject".to_string()
         ))
     );
 }

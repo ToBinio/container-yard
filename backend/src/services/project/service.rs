@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File},
+    fs::{self, File, create_dir},
     io::Write,
     path::PathBuf,
 };
@@ -22,7 +22,7 @@ impl ProjectService {
     pub fn save_file_path(file: &str) -> super::Result<PathBuf> {
         let path = PathBuf::from(file);
         if path.components().count() != 1 {
-            return Err(ProjectServiceError::NotProjectFile(file.to_string()));
+            return Err(ProjectServiceError::InvalidFilePath(file.to_string()));
         }
 
         Ok(path)
@@ -122,5 +122,25 @@ impl ProjectServiceTrait for ProjectService {
             .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
 
         Ok(content.to_string())
+    }
+
+    fn create(&self, name: &str) -> super::Result<ProjectInfo> {
+        let path = Self::save_file_path(name)?;
+        let path = self.base_path.join(path);
+
+        if path.exists() {
+            return Err(ProjectServiceError::ProjectAlreadyExists(name.to_string()));
+        }
+
+        let _ = create_dir(&path);
+
+        let project_info = ProjectInfo {
+            name: name.to_string(),
+            dir: path,
+        };
+
+        self.update_file(&project_info, "compose.yml", "")?;
+
+        Ok(project_info)
     }
 }

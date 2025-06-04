@@ -15,6 +15,9 @@ pub enum ProjectServiceError {
     #[error("Could not find Project {0}")]
     ProjectNotFound(String),
 
+    #[error("A Project with the name {0} does already Exist")]
+    ProjectAlreadyExists(String),
+
     #[error("Could not find file {file} for {project}")]
     FileNotFound { project: String, file: String },
 
@@ -25,7 +28,7 @@ pub enum ProjectServiceError {
     FailedToReadFile(String),
 
     #[error("Cannot access files outside of project dir - tried to access {0}")]
-    NotProjectFile(String),
+    InvalidFilePath(String),
 }
 
 impl IntoResponse for ProjectServiceError {
@@ -35,7 +38,8 @@ impl IntoResponse for ProjectServiceError {
             ProjectServiceError::FileNotFound { .. } => StatusCode::NOT_FOUND,
             ProjectServiceError::FailedToReadDir(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProjectServiceError::FailedToReadFile(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ProjectServiceError::NotProjectFile(_) => StatusCode::BAD_REQUEST,
+            ProjectServiceError::InvalidFilePath(_) => StatusCode::BAD_REQUEST,
+            ProjectServiceError::ProjectAlreadyExists(_) => StatusCode::BAD_REQUEST,
         };
 
         let body = Json(json!({ "error": self.to_string() }));
@@ -52,6 +56,7 @@ pub struct ProjectInfo {
 pub trait ProjectServiceTrait: Send + Sync {
     fn all_projects(&self) -> Result<Vec<ProjectInfo>>;
     fn project(&self, name: &str) -> Result<ProjectInfo>;
+    fn create(&self, name: &str) -> Result<ProjectInfo>;
     fn files(&self, project: &ProjectInfo) -> Result<Vec<String>>;
     fn read_file(&self, project: &ProjectInfo, file: &str) -> Result<String>;
     fn update_file(&self, project: &ProjectInfo, file: &str, content: &str) -> Result<String>;

@@ -175,6 +175,28 @@ impl ProjectServiceTrait for MockProjectService {
 
         Ok(content.to_string())
     }
+
+    fn create(&self, name: &str) -> backend::services::project::Result<ProjectInfo> {
+        let mut data = self.data.lock().unwrap();
+
+        if data.iter().find(|project| &project.name == name).is_some() {
+            return Err(ProjectServiceError::ProjectAlreadyExists(name.to_string()));
+        }
+
+        data.push(Project {
+            name: name.to_string(),
+            dir: "/path/to/newProject".into(),
+            files: vec![File {
+                name: "compose.yml".to_string(),
+                content: "".to_string(),
+            }],
+        });
+
+        //needed to free the lock again
+        drop(data);
+
+        return self.project(name);
+    }
 }
 
 pub struct MockContainerService {
@@ -212,7 +234,12 @@ impl ContainerServiceTrait for MockContainerService {
         &self,
         project: &backend::services::project::ProjectInfo,
     ) -> backend::services::container::Result<bool> {
-        Ok(*self.data.lock().unwrap().get(&project.name).unwrap())
+        Ok(*self
+            .data
+            .lock()
+            .unwrap()
+            .get(&project.name)
+            .unwrap_or(&false))
     }
 
     fn stop(&self, project: &ProjectInfo) -> backend::services::container::Result<()> {

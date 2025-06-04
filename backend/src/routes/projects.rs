@@ -28,6 +28,7 @@ pub fn routes(state: AppState) -> Router {
         .route("/stop/{project_name}", post(post_stop_project))
         .route("/start/{project_name}", post(post_start_project))
         .route("/restart/{project_name}", post(post_restart_project))
+        .route("/create/{project_name}", post(post_create_project))
         .route_layer(from_extractor_with_state::<Claims, _>(state.clone()))
         .with_state(state)
 }
@@ -165,4 +166,15 @@ async fn post_update_project_file(
         "content": content,
     }))
     .into_response())
+}
+
+async fn post_create_project(
+    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    State(container_service): State<Arc<dyn ContainerServiceTrait>>,
+    Path(project_name): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let project_info = project_service.create(&project_name)?;
+
+    let json = project_details(&project_info, project_service, container_service)?;
+    Ok(Json(json).into_response())
 }
