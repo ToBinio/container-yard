@@ -7,10 +7,18 @@ definePageMeta({
 });
 
 const route = useRoute();
-const project = route.params.project;
+const projectName = route.params.project as string;
+
+const projectsStore = useProjectsStore();
+const project = computed(() => {
+  return projectsStore.getByName(projectName);
+});
+
+onMounted(async () => {
+  await projectsStore.fetchProject(projectName);
+});
 
 const { $api } = useNuxtApp();
-const { data } = useAPI<ProjectDetails>("/projects/" + project);
 
 const fetching = ref<"start" | "stop" | "restart" | undefined>(undefined);
 
@@ -18,11 +26,14 @@ async function onStart() {
   fetching.value = "start";
 
   try {
-    const response = await $api<ProjectDetails>("/projects/start/" + project, {
-      method: "POST",
-    });
+    const response = await $api<ProjectDetails>(
+      "/projects/start/" + projectName,
+      {
+        method: "POST",
+      },
+    );
 
-    data.value = response;
+    projectsStore.setProjectDetails(response);
   } catch (e) {
     console.error(e);
   }
@@ -32,11 +43,14 @@ async function onStart() {
 async function onStop() {
   fetching.value = "stop";
   try {
-    const response = await $api<ProjectDetails>("/projects/stop/" + project, {
-      method: "POST",
-    });
+    const response = await $api<ProjectDetails>(
+      "/projects/stop/" + projectName,
+      {
+        method: "POST",
+      },
+    );
 
-    data.value = response;
+    projectsStore.setProjectDetails(response);
   } catch (e) {
     console.error(e);
   }
@@ -47,13 +61,13 @@ async function onRestart() {
   fetching.value = "restart";
   try {
     const response = await $api<ProjectDetails>(
-      "/projects/restart/" + project,
+      "/projects/restart/" + projectName,
       {
         method: "POST",
       },
     );
 
-    data.value = response;
+    projectsStore.setProjectDetails(response);
   } catch (e) {
     console.error(e);
   }
@@ -63,16 +77,16 @@ async function onRestart() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 p-2">
+  <div class="flex flex-col gap-4">
     <div>
-      <h2 class="text-4xl">{{ project }}</h2>
+      <h2 class="text-4xl">{{ projectName }}</h2>
 
       <div class="flex items-center gap-1">
         <span
           class="inline-block w-4 aspect-square bg-neutral-600 rounded-full"
-          :class="{ 'bg-emerald-700!': data?.status == 'running' }"
+          :class="{ 'bg-emerald-700!': project?.status == 'running' }"
         />
-        {{ data?.status ?? "stopped" }}
+        {{ project?.status ?? "stopped" }}
       </div>
     </div>
 
@@ -103,7 +117,7 @@ async function onRestart() {
     <div class="flex flex-col">
       <div class="text-l">Files</div>
 
-      <div v-for="file in data?.files" :key="file">
+      <div v-for="file in project?.files" :key="file">
         <FileEntry :name="file" />
       </div>
     </div>

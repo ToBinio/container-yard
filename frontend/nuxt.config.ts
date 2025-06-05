@@ -13,7 +13,12 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   compatibilityDate: "2025-05-20",
   devtools: { enabled: true },
-  modules: ["@nuxt/icon", "@vueuse/nuxt", "@nuxt/eslint"],
+  modules: [
+    "@nuxt/icon",
+    "@vueuse/nuxt",
+    "@nuxt/eslint",
+    "@pinia/nuxt",
+  ],
   vite: {
     plugins: [tailwindcss()],
   },
