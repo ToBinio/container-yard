@@ -25,26 +25,31 @@ async function onLogin() {
 </script>
 
 <template>
-  <div class="p-2">
-    <form class="flex flex-col gap-1 w-48" @submit.prevent="onLogin">
-      <label class="flex flex-col">
-        User
-        <input v-model="user" class="border-1 border-neutral-600" />
-      </label>
-      <label class="flex flex-col">
-        Password
-        <input
-          v-model="pw"
-          class="border-1 border-neutral-600"
-          type="password"
-        />
-      </label>
-      <button
-        class="flex gap-2 items-center justify-center border-1 border-neutral-600 bg-neutral-700 hover:bg-neutral-600 shadow-md px-1 disabled:bg-neutral-800 data-[loading=true]:text-neutral-500"
-      >
-        Login
-      </button>
-    </form>
+  <div class="w-dvw h-dvh flex items-center justify-center">
+    <div class="border-1 border-neutral-600 p-4 shadow-md">
+      <form class="flex flex-col gap-2 w-48" @submit.prevent="onLogin">
+        <label class="flex flex-col">
+          <span class="text-xl"> User </span>
+          <input
+            v-model="user"
+            class="border-1 border-neutral-600 text-xl pl-1"
+          />
+        </label>
+        <label class="flex flex-col">
+          <span class="text-xl"> Password </span>
+          <input
+            v-model="pw"
+            class="border-1 border-neutral-600 text-xl pl-1"
+            type="password"
+          />
+        </label>
+        <button
+          class="text-xl flex gap-2 items-center justify-center border-1 border-neutral-600 bg-neutral-700 hover:bg-neutral-600 shadow-md px-1 disabled:bg-neutral-800 data-[loading=true]:text-neutral-500"
+        >
+          Login
+        </button>
+      </form>
+    </div>
   </div>
 </template>
 
