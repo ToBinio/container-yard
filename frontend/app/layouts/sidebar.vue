@@ -11,8 +11,9 @@ const { data } = useAPI<Project[]>("/projects");
       <div class="flex gap-2 flex-col">
         <div v-for="project in data" :key="project.name">
           <NuxtLink
-            :href="project.name"
+            :to="project.name"
             class="flex gap-2 items-center border-1 border-neutral-600 bg-neutral-700 hover:bg-neutral-600 text-xl shadow-md px-1"
+            active-class="bg-neutral-600!"
           >
             <span
               class="inline-block w-4 aspect-square bg-emerald-700 rounded-full"

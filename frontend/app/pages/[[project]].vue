@@ -65,7 +65,7 @@ async function onRestart() {
 <template>
   <div class="flex flex-col gap-4 p-2">
     <div>
-      <h2 class="text-4xl">{{ data?.name ?? "Loading..." }}</h2>
+      <h2 class="text-4xl">{{ project }}</h2>
 
       <div class="flex items-center gap-1">
         <span
