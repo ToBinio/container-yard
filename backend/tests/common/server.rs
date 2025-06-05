@@ -106,6 +106,28 @@ impl ProjectServiceTrait for MockProjectService {
             .ok_or_else(|| ProjectServiceError::ProjectNotFound(name.to_string()))
     }
 
+    fn create(&self, name: &str) -> backend::services::project::Result<ProjectInfo> {
+        let mut data = self.data.lock().unwrap();
+
+        if data.iter().find(|project| &project.name == name).is_some() {
+            return Err(ProjectServiceError::ProjectAlreadyExists(name.to_string()));
+        }
+
+        data.push(Project {
+            name: name.to_string(),
+            dir: "/path/to/newProject".into(),
+            files: vec![File {
+                name: "compose.yml".to_string(),
+                content: "".to_string(),
+            }],
+        });
+
+        //needed to free the lock again
+        drop(data);
+
+        return self.project(name);
+    }
+
     fn files(&self, project: &ProjectInfo) -> backend::services::project::Result<Vec<String>> {
         let files = self
             .data
@@ -176,26 +198,30 @@ impl ProjectServiceTrait for MockProjectService {
         Ok(content.to_string())
     }
 
-    fn create(&self, name: &str) -> backend::services::project::Result<ProjectInfo> {
+    fn delete_file(
+        &self,
+        project: &ProjectInfo,
+        file: &str,
+    ) -> backend::services::project::Result<String> {
         let mut data = self.data.lock().unwrap();
+        let project = data
+            .iter_mut()
+            .find(|data| data.name == project.name)
+            .unwrap();
 
-        if data.iter().find(|project| &project.name == name).is_some() {
-            return Err(ProjectServiceError::ProjectAlreadyExists(name.to_string()));
-        }
+        let (index, file) = project
+            .files
+            .iter()
+            .find_position(|data| &data.name == file)
+            .ok_or(ProjectServiceError::FileNotFound {
+                file: file.to_string(),
+                project: project.name.to_string(),
+            })?;
 
-        data.push(Project {
-            name: name.to_string(),
-            dir: "/path/to/newProject".into(),
-            files: vec![File {
-                name: "compose.yml".to_string(),
-                content: "".to_string(),
-            }],
-        });
+        let content = file.content.to_string();
+        project.files.remove(index);
 
-        //needed to free the lock again
-        drop(data);
-
-        return self.project(name);
+        Ok(content)
     }
 }
 

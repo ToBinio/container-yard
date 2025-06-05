@@ -5,7 +5,7 @@ use axum::{
     extract::{self, Path, Query, State},
     middleware::from_extractor_with_state,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -25,6 +25,7 @@ pub fn routes(state: AppState) -> Router {
         .route("/", get(get_all_projects))
         .route("/{project_name}", get(get_project_details))
         .route("/{project_name}", post(post_update_project_file))
+        .route("/{project_name}", delete(delete_project_file))
         .route("/stop/{project_name}", post(post_stop_project))
         .route("/start/{project_name}", post(post_start_project))
         .route("/restart/{project_name}", post(post_restart_project))
@@ -100,6 +101,27 @@ async fn get_project_details(
 
     let json = project_details(&project_info, project_service, container_service)?;
     Ok(Json(json).into_response())
+}
+
+#[derive(Deserialize)]
+struct DeleteFileQuery {
+    file: String,
+}
+
+async fn delete_project_file(
+    State(project_service): State<Arc<dyn ProjectServiceTrait>>,
+    Path(project_name): Path<String>,
+    Query(query): Query<DeleteFileQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let project_info = project_service.project(&project_name)?;
+
+    let content = project_service.delete_file(&project_info, &query.file)?;
+
+    Ok(Json(json!({
+        "name": query.file,
+        "content": content,
+    }))
+    .into_response())
 }
 
 async fn post_stop_project(

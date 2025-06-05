@@ -27,6 +27,9 @@ pub enum ProjectServiceError {
     #[error("Failed to read file at {0}")]
     FailedToReadFile(String),
 
+    #[error("Failed to delete file at {0}")]
+    FailedToDeleteFile(String),
+
     #[error("Cannot access files outside of project dir - tried to access {0}")]
     InvalidFilePath(String),
 }
@@ -38,6 +41,7 @@ impl IntoResponse for ProjectServiceError {
             ProjectServiceError::FileNotFound { .. } => StatusCode::NOT_FOUND,
             ProjectServiceError::FailedToReadDir(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProjectServiceError::FailedToReadFile(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ProjectServiceError::FailedToDeleteFile(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProjectServiceError::InvalidFilePath(_) => StatusCode::BAD_REQUEST,
             ProjectServiceError::ProjectAlreadyExists(_) => StatusCode::BAD_REQUEST,
         };
@@ -60,4 +64,5 @@ pub trait ProjectServiceTrait: Send + Sync {
     fn files(&self, project: &ProjectInfo) -> Result<Vec<String>>;
     fn read_file(&self, project: &ProjectInfo, file: &str) -> Result<String>;
     fn update_file(&self, project: &ProjectInfo, file: &str, content: &str) -> Result<String>;
+    fn delete_file(&self, project: &ProjectInfo, file: &str) -> Result<String>;
 }

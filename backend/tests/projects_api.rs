@@ -12,6 +12,7 @@ async fn require_login() {
         server.get("/projects/test2").await,
         server.post("/projects/create/test2").await,
         server.get("/projects/test2?file=compose.yml").await,
+        server.delete("/projects/test2?file=compose.yml").await,
         server.post("/projects/stop/test").await,
         server.post("/projects/start/test").await,
         server.post("/projects/restart/test").await,
@@ -248,6 +249,37 @@ async fn create_already_existing_project() {
     let (server, _token) = auth_test_server().await;
 
     let response = server.post("/projects/create/test2").await;
+
+    response.assert_status_bad_request();
+}
+
+#[tokio::test]
+async fn delete_file_project() {
+    let (server, _token) = auth_test_server().await;
+
+    let response = server.delete("/projects/test2?file=compose.yml").await;
+
+    response.assert_json(&json!({
+        "name": "compose.yml",
+        "content": "compose.yml"
+    }));
+    response.assert_status_ok();
+}
+
+#[tokio::test]
+async fn delete_unknown_file_project() {
+    let (server, _token) = auth_test_server().await;
+
+    let response = server.delete("/projects/test2?file=unknown.txt").await;
+
+    response.assert_status_not_found();
+}
+
+#[tokio::test]
+async fn delete_missing_file_project() {
+    let (server, _token) = auth_test_server().await;
+
+    let response = server.delete("/projects/unknown").await;
 
     response.assert_status_bad_request();
 }

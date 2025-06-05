@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File, create_dir},
+    fs::{self, File, create_dir, remove_file},
     io::Write,
     path::PathBuf,
 };
@@ -66,6 +66,26 @@ impl ProjectServiceTrait for ProjectService {
         })
     }
 
+    fn create(&self, name: &str) -> super::Result<ProjectInfo> {
+        let path = Self::save_file_path(name)?;
+        let path = self.base_path.join(path);
+
+        if path.exists() {
+            return Err(ProjectServiceError::ProjectAlreadyExists(name.to_string()));
+        }
+
+        let _ = create_dir(&path);
+
+        let project_info = ProjectInfo {
+            name: name.to_string(),
+            dir: path,
+        };
+
+        self.update_file(&project_info, "compose.yml", "")?;
+
+        Ok(project_info)
+    }
+
     fn files(&self, project: &ProjectInfo) -> super::Result<Vec<String>> {
         let dir = fs::read_dir(&project.dir)
             .inspect_err(|err| error!("{}", err))
@@ -93,7 +113,7 @@ impl ProjectServiceTrait for ProjectService {
         if !exist {
             return Err(ProjectServiceError::FileNotFound {
                 project: project.name.to_string(),
-                file: format!("{:?}", path),
+                file: file.to_string(),
             });
         }
 
@@ -124,23 +144,16 @@ impl ProjectServiceTrait for ProjectService {
         Ok(content.to_string())
     }
 
-    fn create(&self, name: &str) -> super::Result<ProjectInfo> {
-        let path = Self::save_file_path(name)?;
-        let path = self.base_path.join(path);
+    fn delete_file(&self, project: &ProjectInfo, file: &str) -> super::Result<String> {
+        let path = Self::save_file_path(file)?;
+        let path = project.dir.join(path);
 
-        if path.exists() {
-            return Err(ProjectServiceError::ProjectAlreadyExists(name.to_string()));
-        }
+        let content = self.read_file(project, file)?;
 
-        let _ = create_dir(&path);
+        remove_file(&path)
+            .inspect_err(|err| error!("{}", err))
+            .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
 
-        let project_info = ProjectInfo {
-            name: name.to_string(),
-            dir: path,
-        };
-
-        self.update_file(&project_info, "compose.yml", "")?;
-
-        Ok(project_info)
+        Ok(content)
     }
 }

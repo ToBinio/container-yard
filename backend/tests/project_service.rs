@@ -217,3 +217,39 @@ async fn create_invalid_project() {
         ))
     );
 }
+
+#[tokio::test]
+async fn delete_project_file() {
+    let (_dir, project_service) = test_project_service();
+
+    let project_info = project_service.project("project1").unwrap();
+    let content = project_service
+        .delete_file(&project_info, "compose.yml")
+        .unwrap();
+    assert_eq!(content, "compose.yml");
+
+    let err = project_service.read_file(&project_info, "compose.yml");
+    assert_eq!(
+        err,
+        Err(ProjectServiceError::FileNotFound {
+            project: "project1".to_string(),
+            file: "compose.yml".to_string()
+        })
+    );
+}
+
+#[tokio::test]
+async fn delete_project_unknown_file() {
+    let (_dir, project_service) = test_project_service();
+
+    let project_info = project_service.project("project1").unwrap();
+    let err = project_service.delete_file(&project_info, "unknown.txt");
+
+    assert_eq!(
+        err,
+        Err(ProjectServiceError::FileNotFound {
+            project: "project1".to_string(),
+            file: "unknown.txt".to_string()
+        })
+    );
+}
