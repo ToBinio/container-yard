@@ -3,6 +3,7 @@ import { AsyncButton, FileEntry } from "#components";
 
 definePageMeta({
   middleware: ["auth"],
+  layout: "sidebar",
 });
 
 const route = useRoute();
