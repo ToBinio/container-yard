@@ -5,7 +5,7 @@ mod common;
 
 #[tokio::test]
 async fn authenticate() {
-    let server = test_server();
+    let (_, server) = test_server();
 
     let response = server
         .post("/auth")
@@ -23,7 +23,7 @@ async fn authenticate() {
 
 #[tokio::test]
 async fn authenticate_missing_data() {
-    let server = test_server();
+    let (_, server) = test_server();
 
     let response = server.post("/auth").json(&json!({})).await;
 
@@ -32,7 +32,7 @@ async fn authenticate_missing_data() {
 
 #[tokio::test]
 async fn authenticate_invalid_data() {
-    let server = test_server();
+    let (_, server) = test_server();
 
     let response = server
         .post("/auth")
@@ -47,7 +47,7 @@ async fn authenticate_invalid_data() {
 
 #[tokio::test]
 async fn validate() {
-    let (server, token) = auth_test_server().await;
+    let (_, server, token) = auth_test_server().await;
 
     let response = server
         .get("/auth/validate")
@@ -59,7 +59,7 @@ async fn validate() {
 
 #[tokio::test]
 async fn validate_cookie() {
-    let (server, _token) = auth_test_server().await;
+    let (_, server, _token) = auth_test_server().await;
 
     let response = server.get("/auth/validate").await;
 
@@ -68,7 +68,7 @@ async fn validate_cookie() {
 
 #[tokio::test]
 async fn validate_no_token() {
-    let server = test_server();
+    let (_, server) = test_server();
 
     let response = server.get("/auth/validate").await;
 
@@ -77,7 +77,7 @@ async fn validate_no_token() {
 
 #[tokio::test]
 async fn validate_invalid_token() {
-    let server = test_server();
+    let (_, server) = test_server();
 
     let response = server
         .get("/auth/validate")

@@ -5,19 +5,19 @@ mod common;
 
 #[tokio::test]
 async fn require_login() {
-    let server = test_server();
+    let (_dir, server) = test_server();
 
     let responses = vec![
         server.get("/projects").await,
-        server.get("/projects/test2").await,
-        server.post("/projects/create/test2").await,
-        server.get("/projects/test2?file=compose.yml").await,
-        server.delete("/projects/test2?file=compose.yml").await,
-        server.post("/projects/stop/test").await,
-        server.post("/projects/start/test").await,
-        server.post("/projects/restart/test").await,
+        server.get("/projects/project1").await,
+        server.post("/projects/create/project1").await,
+        server.get("/projects/project1?file=compose.yml").await,
+        server.delete("/projects/project1?file=compose.yml").await,
+        server.post("/projects/stop/project1").await,
+        server.post("/projects/start/project1").await,
+        server.post("/projects/restart/project1").await,
         server
-            .post("/projects/test2?file=compose.yml")
+            .post("/projects/project1?file=compose.yml")
             .json(&json!({
                 "content": "newCompose",
             }))
@@ -31,22 +31,22 @@ async fn require_login() {
 
 #[tokio::test]
 async fn get_projects() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
     let response = server.get("/projects").await;
 
     response.assert_status_ok();
     response.assert_json(&json!([
         {
-            "name": "test",
+            "name": "project1",
             "status": "running"
         },
         {
-            "name": "test2",
+            "name": "project2",
             "status": "stopped"
         },
         {
-            "name": "test3",
+            "name": "project3",
             "status": "running"
         }
     ]));
@@ -54,115 +54,115 @@ async fn get_projects() {
 
 #[tokio::test]
 async fn get_project_details() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.get("/projects/test2").await;
+    let response = server.get("/projects/project1").await;
 
     response.assert_status_ok();
     response.assert_json(&json!({
-        "name": "test2",
-        "status": "stopped",
-        "files": ["compose.yml", ".env"]
+        "name": "project1",
+        "status": "running",
+        "files": [".env", "compose.yml"]
     }));
 }
 
 #[tokio::test]
-async fn get_project_details_no_env() {
-    let (server, _token) = auth_test_server().await;
+async fn get_project_details_no_files() {
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.get("/projects/test").await;
+    let response = server.get("/projects/project2").await;
 
     response.assert_status_ok();
     response.assert_json(&json!({
-        "name": "test",
-        "status": "running",
-        "files": ["compose.yml"]
+        "name": "project2",
+        "status": "stopped",
+        "files": []
     }));
 }
 
 #[tokio::test]
 async fn get_project_details_unknown() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.get("/projectss/test404").await;
+    let response = server.get("/projectss/project404").await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn stop_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.post("/projects/stop/test").await;
+    let response = server.post("/projects/stop/project1").await;
 
     response.assert_json(&json!({
-        "name": "test",
+        "name": "project1",
         "status": "stopped",
-        "files": ["compose.yml"]
+        "files": [".env", "compose.yml"]
     }));
     response.assert_status_ok();
 }
 
 #[tokio::test]
 async fn stop_project_unkown() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.post("/projects/start/test404").await;
+    let response = server.post("/projects/start/project404").await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn start_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.post("/projects/start/test2").await;
+    let response = server.post("/projects/start/project2").await;
 
     response.assert_json(&json!({
-        "name": "test2",
+        "name": "project2",
         "status": "running",
-        "files": ["compose.yml", ".env"]
+        "files": []
     }));
     response.assert_status_ok();
 }
 
 #[tokio::test]
 async fn start_project_unkown() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.post("/projects/start/test404").await;
+    let response = server.post("/projects/start/project404").await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn restart_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.post("/projects/restart/test").await;
+    let response = server.post("/projects/restart/project1").await;
 
     response.assert_json(&json!({
-        "name": "test",
+        "name": "project1",
         "status": "running",
-        "files": ["compose.yml"]
+        "files": [".env", "compose.yml"]
     }));
     response.assert_status_ok();
 }
 
 #[tokio::test]
 async fn restart_project_unkown() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.post("/projects/restart/test404").await;
+    let response = server.post("/projects/restart/project404").await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn get_project_file() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.get("/projects/test2?file=compose.yml").await;
+    let response = server.get("/projects/project1?file=compose.yml").await;
 
     response.assert_status_ok();
     response.assert_json(&json!({
@@ -173,19 +173,19 @@ async fn get_project_file() {
 
 #[tokio::test]
 async fn get_project_unknown_file() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.get("/projects/test2?file=unknown").await;
+    let response = server.get("/projects/project1?file=unknown").await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn update_file_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
     let response = server
-        .post("/projects/test2?file=compose.yml")
+        .post("/projects/project1?file=compose.yml")
         .json(&json!({
             "content": "newCompose",
         }))
@@ -200,10 +200,10 @@ async fn update_file_project() {
 
 #[tokio::test]
 async fn update_unknown_file_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
     let response = server
-        .post("/projects/test2?file=unknown")
+        .post("/projects/project1?file=unknown")
         .json(&json!({
             "content": "content",
         }))
@@ -218,10 +218,10 @@ async fn update_unknown_file_project() {
 
 #[tokio::test]
 async fn update_file_unknown_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
     let response = server
-        .post("/projects/test404?file=compose.yml")
+        .post("/projects/project404?file=compose.yml")
         .json(&json!({
             "content": "newCompose",
         }))
@@ -232,7 +232,7 @@ async fn update_file_unknown_project() {
 
 #[tokio::test]
 async fn create_new_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
     let response = server.post("/projects/create/newProject").await;
 
@@ -246,18 +246,18 @@ async fn create_new_project() {
 
 #[tokio::test]
 async fn create_already_existing_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.post("/projects/create/test2").await;
+    let response = server.post("/projects/create/project1").await;
 
     response.assert_status_bad_request();
 }
 
 #[tokio::test]
 async fn delete_file_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.delete("/projects/test2?file=compose.yml").await;
+    let response = server.delete("/projects/project1?file=compose.yml").await;
 
     response.assert_json(&json!({
         "name": "compose.yml",
@@ -268,18 +268,18 @@ async fn delete_file_project() {
 
 #[tokio::test]
 async fn delete_unknown_file_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.delete("/projects/test2?file=unknown.txt").await;
+    let response = server.delete("/projects/project1?file=unknown.txt").await;
 
     response.assert_status_not_found();
 }
 
 #[tokio::test]
 async fn delete_missing_file_project() {
-    let (server, _token) = auth_test_server().await;
+    let (_dir, server, _token) = auth_test_server().await;
 
-    let response = server.delete("/projects/unknown").await;
+    let response = server.delete("/projects/project404").await;
 
     response.assert_status_bad_request();
 }

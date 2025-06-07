@@ -32,7 +32,7 @@ impl ContainerService {
             };
             warn!("{}", error);
 
-            return error;
+            error
         })?;
 
         if !output.status.success() {

@@ -2,228 +2,19 @@
 
 use std::{
     collections::HashMap,
-    path::PathBuf,
     sync::{Arc, Mutex},
 };
 
 use axum_test::TestServer;
 use backend::{
     AdminAuth, Keys, app,
-    services::{
-        container::ContainerServiceTrait,
-        project::{ProjectInfo, ProjectServiceError, ProjectServiceTrait},
-    },
+    services::{container::ContainerServiceTrait, project::ProjectInfo},
 };
 use cookie::Cookie;
-use itertools::Itertools;
 use serde_json::json;
+use tempfile::TempDir;
 
-struct Project {
-    name: String,
-    dir: PathBuf,
-    files: Vec<File>,
-}
-
-struct File {
-    name: String,
-    content: String,
-}
-
-pub struct MockProjectService {
-    data: Arc<Mutex<Vec<Project>>>,
-}
-
-impl Default for MockProjectService {
-    fn default() -> Self {
-        let data = vec![
-            Project {
-                name: "test".to_string(),
-                dir: "/path/to/project1".into(),
-                files: vec![File {
-                    name: "compose.yml".to_string(),
-                    content: "compose.yml".to_string(),
-                }],
-            },
-            Project {
-                name: "test2".to_string(),
-                dir: "/path/to/project2".into(),
-                files: vec![
-                    File {
-                        name: "compose.yml".to_string(),
-                        content: "compose.yml".to_string(),
-                    },
-                    File {
-                        name: ".env".to_string(),
-                        content: ".env".to_string(),
-                    },
-                ],
-            },
-            Project {
-                name: "test3".to_string(),
-                dir: "/path/to/project2".into(),
-                files: vec![
-                    File {
-                        name: "compose.yml".to_string(),
-                        content: "compose.yml".to_string(),
-                    },
-                    File {
-                        name: ".env".to_string(),
-                        content: ".env".to_string(),
-                    },
-                ],
-            },
-        ];
-
-        MockProjectService {
-            data: Arc::new(Mutex::new(data)),
-        }
-    }
-}
-
-impl ProjectServiceTrait for MockProjectService {
-    fn all_projects(
-        &self,
-    ) -> backend::services::project::Result<Vec<backend::services::project::ProjectInfo>> {
-        Ok(self
-            .data
-            .lock()
-            .unwrap()
-            .iter()
-            .map(|data| ProjectInfo {
-                name: data.name.clone(),
-                dir: data.dir.clone(),
-            })
-            .collect())
-    }
-
-    fn project(
-        &self,
-        name: &str,
-    ) -> backend::services::project::Result<backend::services::project::ProjectInfo> {
-        self.all_projects()?
-            .into_iter()
-            .find(|project| project.name == name)
-            .ok_or_else(|| ProjectServiceError::ProjectNotFound(name.to_string()))
-    }
-
-    fn create(&self, name: &str) -> backend::services::project::Result<ProjectInfo> {
-        let mut data = self.data.lock().unwrap();
-
-        if data.iter().find(|project| &project.name == name).is_some() {
-            return Err(ProjectServiceError::ProjectAlreadyExists(name.to_string()));
-        }
-
-        data.push(Project {
-            name: name.to_string(),
-            dir: "/path/to/newProject".into(),
-            files: vec![File {
-                name: "compose.yml".to_string(),
-                content: "".to_string(),
-            }],
-        });
-
-        //needed to free the lock again
-        drop(data);
-
-        return self.project(name);
-    }
-
-    fn files(&self, project: &ProjectInfo) -> backend::services::project::Result<Vec<String>> {
-        let files = self
-            .data
-            .lock()
-            .unwrap()
-            .iter()
-            .find(|data| data.name == project.name)
-            .unwrap()
-            .files
-            .iter()
-            .map(|file| file.name.clone())
-            .collect_vec();
-
-        Ok(files)
-    }
-
-    fn read_file(
-        &self,
-        project: &ProjectInfo,
-        file_name: &str,
-    ) -> backend::services::project::Result<String> {
-        let content = self
-            .data
-            .lock()
-            .unwrap()
-            .iter()
-            .find(|data| data.name == project.name)
-            .unwrap()
-            .files
-            .iter()
-            .find(|file| file.name.as_str() == file_name)
-            .ok_or(ProjectServiceError::FileNotFound {
-                file: file_name.to_string(),
-                project: project.name.to_string(),
-            })?
-            .content
-            .clone();
-
-        Ok(content)
-    }
-
-    fn update_file(
-        &self,
-        project: &ProjectInfo,
-        file_name: &str,
-        content: &str,
-    ) -> backend::services::project::Result<String> {
-        let mut data = self.data.lock().unwrap();
-        let project = data
-            .iter_mut()
-            .find(|data| data.name == project.name)
-            .unwrap();
-
-        let file = project.files.iter_mut().find(|file| file.name == file_name);
-
-        match file {
-            Some(file) => {
-                file.content = content.to_string();
-            }
-            None => {
-                project.files.push(File {
-                    name: file_name.to_string(),
-                    content: content.to_string(),
-                });
-            }
-        }
-
-        Ok(content.to_string())
-    }
-
-    fn delete_file(
-        &self,
-        project: &ProjectInfo,
-        file: &str,
-    ) -> backend::services::project::Result<String> {
-        let mut data = self.data.lock().unwrap();
-        let project = data
-            .iter_mut()
-            .find(|data| data.name == project.name)
-            .unwrap();
-
-        let (index, file) = project
-            .files
-            .iter()
-            .find_position(|data| &data.name == file)
-            .ok_or(ProjectServiceError::FileNotFound {
-                file: file.to_string(),
-                project: project.name.to_string(),
-            })?;
-
-        let content = file.content.to_string();
-        project.files.remove(index);
-
-        Ok(content)
-    }
-}
+use crate::common::project_service::test_project_service;
 
 pub struct MockContainerService {
     data: Arc<Mutex<HashMap<String, bool>>>,
@@ -233,9 +24,9 @@ impl Default for MockContainerService {
     fn default() -> Self {
         let mut map = HashMap::new();
 
-        map.insert("test".to_string(), true);
-        map.insert("test2".to_string(), false);
-        map.insert("test3".to_string(), true);
+        map.insert("project1".to_string(), true);
+        map.insert("project2".to_string(), false);
+        map.insert("project3".to_string(), true);
 
         MockContainerService {
             data: Arc::new(Mutex::new(map)),
@@ -295,8 +86,10 @@ impl ContainerServiceTrait for MockContainerService {
     }
 }
 
-pub fn test_server() -> TestServer {
-    let project_service = Arc::new(MockProjectService::default());
+pub fn test_server() -> (TempDir, TestServer) {
+    let (dir, project_service) = test_project_service();
+
+    let project_service = Arc::new(project_service);
     let container_service = Arc::new(MockContainerService::default());
     let app = app(
         project_service.clone(),
@@ -308,11 +101,14 @@ pub fn test_server() -> TestServer {
         },
     );
 
-    TestServer::builder().http_transport().build(app).unwrap()
+    (
+        dir,
+        TestServer::builder().http_transport().build(app).unwrap(),
+    )
 }
 
-pub async fn auth_test_server() -> (TestServer, String) {
-    let mut server = test_server();
+pub async fn auth_test_server() -> (TempDir, TestServer, String) {
+    let (dir, mut server) = test_server();
 
     let response = server
         .post("/auth")
@@ -327,5 +123,5 @@ pub async fn auth_test_server() -> (TestServer, String) {
 
     server.add_cookie(Cookie::new("token", token.clone()));
 
-    (server, token)
+    (dir, server, token)
 }
