@@ -118,7 +118,7 @@ async function onRestart() {
       <div class="text-l">Files</div>
 
       <div v-for="file in project?.files" :key="file">
-        <FileEntry :name="file" />
+        <FileEntry :file-name="file" :project-name="projectName" />
       </div>
     </div>
   </div>
