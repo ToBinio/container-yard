@@ -115,7 +115,10 @@ async function onRestart() {
     </div>
 
     <div class="flex flex-col">
-      <div class="text-l">Files</div>
+      <div class="text-l flex gap-1">
+        Files
+        <FileCreate :project-name="projectName" />
+      </div>
 
       <div v-for="file in project?.files" :key="file">
         <FileEntry :file-name="file" :project-name="projectName" />
