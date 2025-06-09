@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File, create_dir, remove_file},
+    fs::{self, File, create_dir, remove_dir_all, remove_file},
     io::Write,
     path::PathBuf,
 };
@@ -86,6 +86,22 @@ impl ProjectServiceTrait for ProjectService {
         Ok(project_info)
     }
 
+    fn delete(&self, project: &ProjectInfo) -> super::Result<()> {
+        if !project.dir.exists() {
+            return Err(ProjectServiceError::ProjectNotFound(
+                project.name.to_string(),
+            ));
+        }
+
+        remove_dir_all(&project.dir)
+            .inspect_err(|err| error!("{}", err))
+            .map_err(|_| {
+                ProjectServiceError::FailedToDeleteProject(format!("{:?}", project.dir))
+            })?;
+
+        Ok(())
+    }
+
     fn files(&self, project: &ProjectInfo) -> super::Result<Vec<String>> {
         let dir = fs::read_dir(&project.dir)
             .inspect_err(|err| error!("{}", err))
@@ -144,16 +160,21 @@ impl ProjectServiceTrait for ProjectService {
         Ok(content.to_string())
     }
 
-    fn delete_file(&self, project: &ProjectInfo, file: &str) -> super::Result<String> {
+    fn delete_file(&self, project: &ProjectInfo, file: &str) -> super::Result<()> {
         let path = Self::save_file_path(file)?;
         let path = project.dir.join(path);
 
-        let content = self.read_file(project, file)?;
+        if !path.exists() {
+            return Err(ProjectServiceError::FileNotFound {
+                project: project.name.to_string(),
+                file: file.to_string(),
+            });
+        }
 
         remove_file(&path)
             .inspect_err(|err| error!("{}", err))
             .map_err(|_| ProjectServiceError::FailedToReadDir(format!("{:?}", path)))?;
 
-        Ok(content)
+        Ok(())
     }
 }

@@ -25,7 +25,7 @@ pub fn routes(state: AppState) -> Router {
         .route("/", get(get_all_projects))
         .route("/{project_name}", get(get_project_details))
         .route("/{project_name}", post(post_update_project_file))
-        .route("/{project_name}", delete(delete_project_file))
+        .route("/{project_name}", delete(delete_project))
         .route("/stop/{project_name}", post(post_stop_project))
         .route("/start/{project_name}", post(post_start_project))
         .route("/restart/{project_name}", post(post_restart_project))
@@ -103,25 +103,20 @@ async fn get_project_details(
     Ok(Json(json).into_response())
 }
 
-#[derive(Deserialize)]
-struct DeleteFileQuery {
-    file: String,
-}
-
-async fn delete_project_file(
+async fn delete_project(
     State(project_service): State<Arc<dyn ProjectServiceTrait>>,
     Path(project_name): Path<String>,
-    Query(query): Query<DeleteFileQuery>,
-) -> Result<impl IntoResponse, AppError> {
+    Query(query): Query<FileQuery>,
+) -> Result<(), AppError> {
     let project_info = project_service.project(&project_name)?;
 
-    let content = project_service.delete_file(&project_info, &query.file)?;
+    if let Some(file) = query.file {
+        project_service.delete_file(&project_info, &file)?;
+    } else {
+        project_service.delete(&project_info)?;
+    }
 
-    Ok(Json(json!({
-        "name": query.file,
-        "content": content,
-    }))
-    .into_response())
+    Ok(())
 }
 
 async fn post_stop_project(

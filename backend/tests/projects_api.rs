@@ -10,6 +10,7 @@ async fn require_login() {
     let responses = vec![
         server.get("/projects").await,
         server.get("/projects/project1").await,
+        server.delete("/projects/project1").await,
         server.post("/projects/create/project1").await,
         server.get("/projects/project1?file=compose.yml").await,
         server.delete("/projects/project1?file=compose.yml").await,
@@ -259,10 +260,6 @@ async fn delete_file_project() {
 
     let response = server.delete("/projects/project1?file=compose.yml").await;
 
-    response.assert_json(&json!({
-        "name": "compose.yml",
-        "content": "compose.yml"
-    }));
     response.assert_status_ok();
 }
 
@@ -276,10 +273,19 @@ async fn delete_unknown_file_project() {
 }
 
 #[tokio::test]
-async fn delete_missing_file_project() {
+async fn delete_project() {
+    let (_dir, server, _token) = auth_test_server().await;
+
+    let response = server.delete("/projects/project1").await;
+
+    response.assert_status_ok();
+}
+
+#[tokio::test]
+async fn delete_unknown_project() {
     let (_dir, server, _token) = auth_test_server().await;
 
     let response = server.delete("/projects/project404").await;
 
-    response.assert_status_bad_request();
+    response.assert_status_not_found();
 }

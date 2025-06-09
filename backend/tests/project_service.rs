@@ -223,10 +223,9 @@ async fn delete_project_file() {
     let (_dir, project_service) = test_project_service();
 
     let project_info = project_service.project("project1").unwrap();
-    let content = project_service
+    project_service
         .delete_file(&project_info, "compose.yml")
         .unwrap();
-    assert_eq!(content, "compose.yml");
 
     let err = project_service.read_file(&project_info, "compose.yml");
     assert_eq!(
@@ -252,4 +251,29 @@ async fn delete_project_unknown_file() {
             file: "unknown.txt".to_string()
         })
     );
+}
+
+#[tokio::test]
+async fn delete_project() {
+    let (dir, project_service) = test_project_service();
+    let path = dir.path();
+
+    let project_info = project_service.project("project1").unwrap();
+
+    project_service.delete(&project_info).unwrap();
+
+    let projects = project_service.all_projects();
+    assert_eq!(
+        projects,
+        Ok(vec![
+            ProjectInfo {
+                name: "project2".to_string(),
+                dir: path.join("project2"),
+            },
+            ProjectInfo {
+                name: "project3".to_string(),
+                dir: path.join("project3"),
+            }
+        ])
+    )
 }
