@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NuxtLink } from "#components";
+import ProjectCreate from "~/components/sidebar/project-create.vue";
 
 const projectsStore = useProjectsStore();
 
@@ -11,7 +12,10 @@ await callOnce(async () => {
 <template>
   <div class="flex">
     <div class="bg-neutral-700 h-dvh p-1 min-w-48">
-      <h2 class="text-2xl pb-2">Projects</h2>
+      <h2 class="text-2xl pb-2 flex gap-2 items-center">
+        Projects
+        <ProjectCreate />
+      </h2>
       <div class="flex gap-2 flex-col">
         <div v-for="project in projectsStore.data" :key="project.name">
           <NuxtLink

@@ -52,9 +52,9 @@ async function onSaveChanges() {
 <template>
   <DialogRoot v-model:open="open">
     <DialogTrigger
-      class="flex gap-2 items-center border-1 border-neutral-600 bg-neutral-700 hover:bg-neutral-600 shadow-md px-1"
+      class="flex gap-2 items-center border-1 border-neutral-600 bg-neutral-700 hover:bg-neutral-600 shadow-md"
     >
-      +
+      <Icon name="material-symbols:add-rounded" size="24" />
     </DialogTrigger>
     <DialogPortal>
       <DialogOverlay
