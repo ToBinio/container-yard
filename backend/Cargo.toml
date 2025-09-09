@@ -6,24 +6,24 @@ edition = "2024"
 [dependencies]
 axum = { version = "0.8.4", features = ["macros"] }
 
-tokio = { version = "1.45.0", features = ["macros", "rt-multi-thread"] }
-tower-http = { version = "0.6.4", features = ["cors", "tower", "trace"] }
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
+tower-http = { version = "0.6.6", features = ["cors", "tower", "trace"] }
 tower = { version = "0.5.2", features = ["util"] }
 
-tracing-subscriber = "0.3.19"
+tracing-subscriber = "0.3.20"
 tracing = "0.1.41"
 
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
+serde_json = "1.0.143"
 
 futures = "0.3.31"
 itertools = "0.14.0"
-thiserror = "2.0.12"
+thiserror = "2.0.16"
 dotenv = "0.15.0"
 jsonwebtoken = "9.3.1"
 axum-extra = { version = "0.10.1", features = ["typed-header"] }
 cookie = "0.18.1"
 
 [dev-dependencies]
-axum-test = { version = "17.2.0" }
-tempfile = "3.20.0"
+axum-test = { version = "17.3.0" }
+tempfile = "3.22.0"
